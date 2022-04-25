@@ -1,0 +1,3 @@
+[submodule "gazemae"]
+	path = gazemae
+	url = https://github.com/chipbautista/gazemae.git
