@@ -1,0 +1,56 @@
+Trial_name,avg_saliency,latency_first_fixation,saliency_first_fixation,saliency_longest_fixation,latency_longest_fixation,latency_maximum_saliency
+Freeviewingstillimage_1,False,False,False,False,False,False
+Freeviewingstillimage_10,True,False,True,True,False,False
+Freeviewingstillimage_10_cutout,True,False,False,False,False,False
+Freeviewingstillimage_11,False,False,False,False,False,False
+Freeviewingstillimage_12,True,False,False,False,False,False
+Freeviewingstillimage_13,False,False,False,False,False,False
+Freeviewingstillimage_15,True,False,False,False,False,False
+Freeviewingstillimage_16,False,False,True,False,True,False
+Freeviewingstillimage_17,False,True,True,True,True,True
+Freeviewingstillimage_18,False,False,False,False,False,False
+Freeviewingstillimage_19,False,False,False,False,False,False
+Freeviewingstillimage_2,True,False,False,False,False,False
+Freeviewingstillimage_20,False,False,False,False,False,False
+Freeviewingstillimage_21,False,False,False,False,False,False
+Freeviewingstillimage_22,False,False,False,False,False,False
+Freeviewingstillimage_23,False,False,False,False,False,False
+Freeviewingstillimage_24,False,False,False,False,False,False
+Freeviewingstillimage_25,False,False,False,False,False,False
+Freeviewingstillimage_26,False,False,True,True,False,False
+Freeviewingstillimage_27,False,False,False,False,False,False
+Freeviewingstillimage_28,True,False,False,False,False,False
+Freeviewingstillimage_28_cutout,True,False,True,True,False,False
+Freeviewingstillimage_29,True,False,False,False,False,False
+Freeviewingstillimage_31,True,False,False,False,False,False
+Freeviewingstillimage_33,True,False,False,False,False,False
+Freeviewingstillimage_35,False,False,False,False,False,False
+Freeviewingstillimage_36,True,False,False,False,False,False
+Freeviewingstillimage_36_cutout,True,False,False,False,False,False
+Freeviewingstillimage_39,True,False,True,True,False,False
+Freeviewingstillimage_4,True,False,True,False,False,False
+Freeviewingstillimage_40,True,False,True,True,False,False
+Freeviewingstillimage_41,True,False,False,False,False,False
+Freeviewingstillimage_45,False,False,False,False,False,False
+Freeviewingstillimage_46,True,False,True,True,False,False
+Freeviewingstillimage_47,False,False,False,False,False,False
+Freeviewingstillimage_5,True,False,False,False,False,False
+Freeviewingstillimage_7,True,False,False,False,False,False
+Freeviewingstillimage_8,True,False,False,False,False,False
+Freeviewingstillimage_88,True,False,False,False,False,False
+Freeviewingstillimage_9,False,False,False,False,False,False
+Freeviewingstillimage_92,True,False,False,False,False,False
+Freeviewingstillimage_93,True,False,False,True,False,False
+Freeviewingstillimage_93_cutout,True,False,True,True,False,False
+Moviestillimage_6,True,False,False,False,False,False
+Moviestillimage_8,True,False,False,False,False,False
+visual search form 16_1,True,False,False,False,False,False
+visual search form 24_1,False,False,False,False,False,False
+visual search form 32_1,False,False,False,False,False,False
+visual search form 4_1,True,False,True,True,False,False
+visual search form 8_1,True,False,False,False,False,False
+visual search orientation 16_1,True,False,False,False,False,False
+visual search orientation 24_1,False,False,False,False,False,False
+visual search orientation 32_1,False,False,False,False,False,False
+visual search orientation 4_1,True,False,True,True,False,False
+visual search orientation 8_1,False,False,False,False,False,False

@@ -1,3 +1,4 @@
+from audioop import reverse
 import numpy as np
 import os
 import sys
@@ -12,12 +13,16 @@ from matplotlib import pyplot as plt
 from sklearn.decomposition import PCA
 from tslearn.metrics import dtw
 from scipy.spatial.distance import cdist
+from scipy.stats import ttest_ind
+import pickle as pkl 
 
 class Subject():
     def __init__(self, subject_id):
         self.id = subject_id
         self.asc_file = f'../asc_data_v1/{self.id}.asc'
         self.data = open(self.asc_file, 'r')
+        # self.lines = [d for d in self.data]
+        # print(self.lines)
     
     def readTrialData(self, trial_name, vel=False, verbose=False):
         # print(f'reading data for trial: {trial_name}')
@@ -74,6 +79,131 @@ class Subject():
             return velocity, fraction
         # print(f'{self.id}: available data: {1 - fraction}')
         return data_fusion, fraction
+
+    def extractFixations(self, trial_name):
+        #read all the lines from a trial 
+        trial_active = False
+        trial = []
+        self.trial_numeric= []
+        for line in self.data:
+            if trial_active:
+                if ('End Trial {}'.format(trial_name) in line ) or ('Start Trial {}'.format(trial_name) in line):
+                    # print(line)
+                    break
+                else:
+                    if line[0].isnumeric():
+                        self.trial_numeric.append(line)
+                    trial.append(line)
+                    
+            elif 'Start Trial {}'.format(trial_name) in line:
+                # print('start trial encountered')
+                # print (line)
+                trial_active = True
+            else:
+                continue
+        
+        self.trial = trial
+        if len(trial) <=2 :
+            return []
+        trial_st = int(self.trial_numeric[0].split('\t')[0])
+        trial_et = int(self.trial_numeric[-1].split('\t')[0])
+        #get the left eye fixations
+        fixation_active = False
+        fixations_l = []
+        for line in trial:
+            if fixation_active:
+                if 'EFIX L' in line:
+                    fixations_l.append(current_fixation)
+                    fixation_active = False
+                else:
+                    if line[0].isdigit():
+                        current_fixation.append(line)
+                        # print(line)
+            elif 'SFIX L' in line:
+                # print('got a start')
+                fixation_active = True
+                current_fixation = []
+            else:
+                continue
+
+        #get the right eye fixations
+        fixation_active = False
+        fixations_r = []
+        for line in trial:
+            if fixation_active:
+                if 'EFIX R' in line:
+                    fixations_r.append(current_fixation)
+                    fixation_active = False
+                else:
+                    if line[0].isdigit():
+                        current_fixation.append(line)
+            elif 'SFIX R' in line:
+                fixation_active = True
+                current_fixation = []
+            else:
+                continue
+        self.fixations = [fixations_l, fixations_r]
+        #compute the intersection between the left and right fixations
+        if len(fixations_r) <= len(fixations_l):
+            primary_fixations = fixations_r
+            secondary_fixations = fixations_l
+        else:
+            primary_fixations = fixations_l
+            secondary_fixations = fixations_r
+        
+        # print(len(primary_fixations), len(secondary_fixations))
+        intersections = []
+        for i, pri_fix in enumerate(primary_fixations):
+            pri_fix_times = [d.split('\t')[0] for d in pri_fix]
+            for j, sec_fix in enumerate(secondary_fixations):
+                sec_fix_times = [d.split('\t')[0] for d in sec_fix]
+                intersections.append([i, j, len(list(set(pri_fix_times).intersection(set(sec_fix_times))))])
+        
+        intersections.sort(key = lambda x: x[-1], reverse=True)
+        # print(intersections)
+        fixation_idxes = intersections[:len(primary_fixations)]
+        fixations_all = []
+        for idx in fixation_idxes:
+            a = [int(d.split('\t')[0]) for d in primary_fixations[idx[0]]]
+            b = [int(d.split('\t')[0]) for d in secondary_fixations[idx[1]]]
+            time_stamps = list(set(a).intersection(set(b)))
+            if len(time_stamps) < 10:
+                break
+            # print(time_stamps)
+            fixation_st = np.min(time_stamps) - trial_st
+            fixation_et = np.max(time_stamps) - trial_st
+            fixation = []
+            fixation_raw = [d for d in primary_fixations[idx[0]] if int(d.split('\t')[0]) in time_stamps]
+            # print(fixation_raw)
+            for line in fixation_raw:
+                l = line.split('\t')
+                fixation.append([l[1], l[2], l[4], l[5]])
+            
+            for i, row in enumerate(fixation):
+                for j, element in enumerate(row):
+                    try:
+                        fixation[i][j] = float(element)
+                    except:
+                        fixation[i][j] = 0.0
+            fixation = np.array(fixation)
+            # print(fixation)
+            fixation[fixation<0] = 0.0
+            fused_fixation = []
+            for fix_ in fixation:
+                xl, yl, xr, yr = fix_
+                if xl ==0 and yl ==0:
+                    fused_fixation.append([xr, yr])
+                elif xr == 0 and yr ==0:
+                    fused_fixation.append([xl, yl])
+                else:
+                    fused_fixation.append([(xl + xr)/2, (yl + yr)/2])
+            fused_fixation = np.array(fused_fixation)
+            # print(fused_fixation.shape)
+            self.fused_fixation = fused_fixation
+            fraction = 1 - np.sum((fused_fixation[:,0] ==0) & (fused_fixation[:,1]==0)) / len(fused_fixation)
+            fixations_all.append([fused_fixation, fraction, fixation_st, fixation_et])
+        return fixations_all
+
 
 class FeatureRepresentation():
     def __init__(self):
@@ -221,9 +351,21 @@ class SaliencyTrace():
             trial_data, frac = sub.readTrialData(trial_name)
             self.timeseries[subject] = trial_data
             self.data_frac[subject] = 1 - frac
-        
+    
+    def readAllFixations(self, trial_name):
+        data_dir = '../asc_data_v1'
+        subject_ids = glob.glob(os.path.join(data_dir, '*.asc'))
+        subject_ids = [os.path.basename(d)[:-4] for d in subject_ids]
+        self.fixation_timeseries = {}
+        for subject in subject_ids:
+            # print(subject, 'reading fixation')
+            sub = Subject(subject)
+            fixations = sub.extractFixations(trial_name)
+            self.fixation_timeseries[subject] = fixations
+
     def computeTrace(self, trial_name, data):
         saliency_map = np.load(f'../smaps/gen/{trial_name}.npy').squeeze()
+        saliency_map = (saliency_map - np.min(saliency_map[:]))/(np.max(saliency_map) - np.min(saliency_map))
         data = [d for d in data if (d[0] != 0) or (d[1]!=0)]
         for i, row in enumerate(data):
             x, y = data[i]
@@ -239,6 +381,42 @@ class SaliencyTrace():
         trace = [saliency_map[d[1], d[0]] for d in data]
         return trace
 
+    def computeFixationTraces(self, trial_name, fixations):
+        self.readAllFixations(trial_name)
+        saliency_map = np.load(f'../smaps/gen/{trial_name}.npy').squeeze()
+        saliency_map = (saliency_map - np.min(saliency_map[:]))/(np.max(saliency_map) - np.min(saliency_map))
+        avg_fixations = []
+        for fixation_ in fixations:
+            fixation, frac, st, et = fixation_
+            fixation = [d for d in fixation if (d[0] != 0) or (d[1] != 0)]
+            for i, row in enumerate(fixation):
+                x, y = row
+                if x>=1280:
+                    x =1279
+                elif x<0:
+                    x=0
+                if y>=720:
+                    y=719
+                elif y<0:
+                    y=0
+                fixation[i] = [int(x), int(y)]
+            trace_ = [saliency_map[d[1], d[0]] for d in fixation]
+            avg_fixations.append([np.mean(trace_), frac, st, et])
+        return avg_fixations
+    
+    def computeFixationTraceForAll(self, trial_name):
+        self.readAllFixations(trial_name)
+        # self.avg_fixations = {subject: self.computeFixationTraces(trial_name, \
+        #                       data) for subject, data in \
+        #                       self.fixation_timeseries.items() if len(data)}
+        self.avg_fixations = {}
+        for sub, data in self.fixation_timeseries.items():
+            # print(sub)
+            if len(data):
+                self.avg_fixations[sub] = self.computeFixationTraces(trial_name, data)
+
+        
+    
     def computeTraceForALL(self, trial_name):
         self.readAllData(trial_name)
         subject_ids = [k for k in self.data_frac.keys() if self.data_frac[k] > 0.5]
@@ -246,6 +424,16 @@ class SaliencyTrace():
         self.trace = {}
         for subject in subject_ids:
             self.trace[subject] = self.computeTrace(trial_name, self.timeseries[subject])
+    
+    def plotTrace(self, trial_name):
+        self.computeTraceForALL(trial_name)
+        plt.clf()
+        for subject, trace in self.trace.items():
+            x = [i for i in range(1, len(trace) + 1)]
+            plt.plot(x, trace, label=subject)
+        plt.grid()
+        plt.legend()
+        plt.savefig('trace_all.png', dpi=300)
     
     def computeDistance(self, trial_name):
         print(f'{trial_name}')
@@ -295,13 +483,175 @@ class SaliencyTrace():
             name = pair[0][:-4].split('_')[1]
             plt.savefig(f'comparison_{name}.png')
             
+class TraceAnalyzer():
+    def __init__(self, trial_name) -> None:
+        self.trial_name = trial_name
+        self.st = SaliencyTrace()
+        
+
+    def representation(self, type ='avg'):
+        self.st.computeTraceForALL(self.trial_name)
+        self.traces = self.st.trace
+        dict = {}
+        for sub in self.traces.keys():
+            dict[sub] = np.mean(self.traces[sub])
+        return dict
+        # return {sub: np.mean(self.traces[sub] for sub in self.traces.keys())}
+        
+    def metrics(self):
+        rep = self.representation()
+        x_y = [[k, v] for k,v in rep.items()]
+        x_y.sort(key= lambda x: x[0])
+        plt.clf()
+        plt.bar(list(range(len(x_y))), [d[1] for d in x_y])
+        plt.xticks(list(range(len(x_y))), [d[0] for d in x_y], rotation=90)
+        plt.grid()
+        plt.tight_layout()
+        name = os.path.join('trace_rep', self.trial_name[:-4] + '.png')
+        plt.savefig(name, dpi=300)
+        a = [d[1] for d in x_y if d[0].startswith('1')]
+        b = [d[1] for d in x_y if d[0].startswith('2')]
+        with open('ttest_trace_avg.txt', 'a') as f:
+            print(self.trial_name[:-4], ttest_ind(a, b), file=f)
+    
+    def plotTraces(self):
+        subjects = list(self.traces.keys())
+        cvi = [sub for sub in subjects if sub.startswith('1')]
+        ctrl = [sub for sub in subjects if sub.startswith('2')]
+        plt.clf()
+        for sub in ctrl:
+            x = [i for i in range(1, len(self.traces[sub])+1)]
+            plt.plot(x, self.traces[sub], label=sub)
+        plt.savefig(f'trace_group_wise/{self.trial_name[:-4]}_ctrl.png', dpi=300)
+        plt.clf()
+        for sub in cvi:
+            x = [i for i in range(1, len(self.traces[sub])+1)]
+            plt.plot(x, self.traces[sub], label=sub)
+        plt.savefig(f'trace_group_wise/{self.trial_name[:-4]}_cvi.png', dpi=300)
+
+    # def plot_fixation_latency(self):
+    #     self.st.computeFixationTraceForAll(self.trial_name)
+    #     subjects
+
+class FixationAnalyzer():
+    def __init__(self, trial_name):
+        self.trial_name = trial_name
+        self.avg_fixation = pkl.load(open(os.path.join('avg_fixation_trial_wise', trial_name + '.pkl'), 'rb'))
+
+    def latency_first_fixation(self):
+        x_y = [[sub, data[0][2]] for sub, data in self.avg_fixation.items()]
+        x_y.sort(key=lambda x: x[0])
+        return x_y
+
+    def saliency_first_fixation(self):
+        x_y = [[sub, data[0][0]] for sub, data in self.avg_fixation.items()]
+        x_y.sort(key=lambda x: x[0])
+        return x_y
+    
+    def saliency_longest_fixation(self):
+        x_y = []
+        for sub, data in self.avg_fixation.items():
+            data.sort(key = lambda x: x[-1] - x[-2])
+            x_y.append([sub, data[-1][0]])
+        x_y.sort(key=lambda x: x[0])
+        return x_y
+    
+    def latency_longest_fixation(self):
+        x_y = []
+        for sub, data in self.avg_fixation.items():
+            data.sort(key = lambda x: x[-1] - x[-2])
+            x_y.append([sub, data[-1][2]])
+        x_y.sort(key=lambda x: x[0])
+        return x_y
+    
+    def latency_maximum_saliency(self):
+        x_y = []
+        for sub, data in self.avg_fixation.items():
+            data.sort(key = lambda x: x[0])
+            x_y.append([sub, data[-1][2]])
+        x_y.sort(key=lambda x: x[0])
+        return x_y
+    
+    def compute_metrics(self):
+        stats = {}
+        plt.clf()
+        x_y = self.latency_first_fixation()
+        plt.subplot(2,3,1)
+        plt.bar(list(range(len(x_y))), [d[1] for d in x_y])
+        plt.xticks(list(range(len(x_y))), [d[0] for d in x_y], rotation=90)
+        plt.grid()
+        plt.tight_layout()
+        plt.title('latency_first_fixation')
+        plt.ylabel('time')
+        a = [d[1] for d in x_y if d[0].startswith('1')]
+        b = [d[1] for d in x_y if d[0].startswith('2')]
+        stat, p_value = ttest_ind(a, b)
+        stats['latency_first_fixation'] = [stat, p_value]
+
+        x_y = self.saliency_first_fixation()
+        plt.subplot(2,3,2)
+        plt.bar(list(range(len(x_y))), [d[1] for d in x_y])
+        plt.xticks(list(range(len(x_y))), [d[0] for d in x_y], rotation=90)
+        plt.grid()
+        plt.tight_layout()
+        plt.title('saliency_first_fixation')
+        plt.ylabel('time')
+        a = [d[1] for d in x_y if d[0].startswith('1')]
+        b = [d[1] for d in x_y if d[0].startswith('2')]
+        stat, p_value = ttest_ind(a, b)
+        stats['saliency_first_fixation'] = [stat, p_value]
+
+        x_y = self.saliency_longest_fixation()
+        plt.subplot(2,3,3)
+        plt.bar(list(range(len(x_y))), [d[1] for d in x_y])
+        plt.xticks(list(range(len(x_y))), [d[0] for d in x_y], rotation=90)
+        plt.grid()
+        plt.tight_layout()
+        plt.title('saliency_longest_fixation')
+        plt.ylabel('time')
+        a = [d[1] for d in x_y if d[0].startswith('1')]
+        b = [d[1] for d in x_y if d[0].startswith('2')]
+        stat, p_value = ttest_ind(a, b)
+        stats['saliency_longest_fixation'] = [stat, p_value]
+
+        x_y = self.latency_longest_fixation()
+        plt.subplot(2,3,4)
+        plt.bar(list(range(len(x_y))), [d[1] for d in x_y])
+        plt.xticks(list(range(len(x_y))), [d[0] for d in x_y], rotation=90)
+        plt.grid()
+        plt.tight_layout()
+        plt.title('latency_longest_fixation')
+        plt.ylabel('time')
+        a = [d[1] for d in x_y if d[0].startswith('1')]
+        b = [d[1] for d in x_y if d[0].startswith('2')]
+        stat, p_value = ttest_ind(a, b)
+        stats['latency_longest_fixation'] = [stat, p_value]
+
+        x_y = self.latency_maximum_saliency()
+        plt.subplot(2,3,5)
+        plt.bar(list(range(len(x_y))), [d[1] for d in x_y])
+        plt.xticks(list(range(len(x_y))), [d[0] for d in x_y], rotation=90)
+        plt.grid()
+        plt.tight_layout()
+        plt.title('latency_maximum_saliency')
+        plt.ylabel('time')
+        a = [d[1] for d in x_y if d[0].startswith('1')]
+        b = [d[1] for d in x_y if d[0].startswith('2')]
+        stat, p_value = ttest_ind(a, b)
+        stats['latency_maximum_saliency'] = [stat, p_value]
+        plt.savefig('fixation_stats/' + self.trial_name[:-4] + '.png', dpi=300)
+        return stats
+
+
+
 
 
 if __name__ == '__main__':
-    fr = FeatureRepresentation()
+    # fr = FeatureRepresentation()
     # da = DTWAnalysis()
     # st = SaliencyTrace()
     # st.compareTrials()
+    
     trials_images =['Freeviewingstillimage_1.jpg',
     'Freeviewingstillimage_2.jpg',
     'Freeviewingstillimage_4.jpg',
@@ -481,9 +831,40 @@ if __name__ == '__main__':
     'Freeviewingstillimage_88_cutout.tif',
     'visual search form 32_1.jpg',
     'Closing Movie']
+    trials_images.sort(reverse=True)
+    stats = {}
+
     for trial_name in trials_images:
-        fr.plotDistanceMatrix(trial_name, vel=True)
+        # fr.plotDistanceMatrix(trial_name, vel=True)
     #     # da.plotDistanceMatrixTrialWise(trial_name)
-    #     st.computeDistance(trial_name)
+        # st.computeDistance(trial_name)
+        # st.plotTrace(trial_name)
+        # ta = TraceAnalyzer(trial_name)
+        # # ta.metrics()
+        # ta.plotTraces()'
+
+
+
+        # save the avg fixation
+        # print(trial_name)
+        # file_name =os.path.join('avg_fixation_trial_wise', trial_name + '.pkl')
+        # if os.path.isfile(file_name):
+        #     continue
+        # st = SaliencyTrace()
+        # st.computeFixationTraceForAll(trial_name)
+        # f = open(os.path.join('avg_fixation_trial_wise', trial_name + '.pkl'), 'wb')
+        # pkl.dump(st.avg_fixations, f)
+        # f.close()
+        
+        #analyze the saved fixation
+        # stats = {}
+        print(trial_name)
+        fa =FixationAnalyzer(trial_name)
+        stats[trial_name[:-4]] = fa.compute_metrics()
+    
+    f =open('avg_fixation_stats_all_trials.pkl', 'wb')
+    pkl.dump(stats, f)
+    f.close()
+
 
     
