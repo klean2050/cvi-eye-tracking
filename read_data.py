@@ -15,7 +15,7 @@ from tslearn.metrics import dtw
 from scipy.spatial.distance import cdist
 from scipy.stats import ttest_ind
 import pickle as pkl 
-
+from tqdm  import tqdm
 class Subject():
     def __init__(self, subject_id):
         self.id = subject_id
@@ -340,6 +340,12 @@ class DTWAnalysis():
             plt.savefig(f'distance_matrix/{trial_name}.png')
 
 class SaliencyTrace():
+    def __init__(self, smaps= ['all']):
+        self.smap_dir =  '/data/rash/cvi/saliency_maps/'
+        if 'all' in smaps:
+            self.smaps = ['0', '90', 'by', 'color', 'edges', 'intensity', 'object', 'orientation', 'rg', 'grad']
+        else:
+            self.smaps= smaps
     def readAllData(self, trial_name):
         data_dir = '../asc_data_v1'
         subject_ids = glob.glob(os.path.join(data_dir, '*.asc'))
@@ -381,6 +387,46 @@ class SaliencyTrace():
         trace = [saliency_map[d[1], d[0]] for d in data]
         return trace
 
+    def computeTraces(self, trial_name, data):
+        traces = {}
+        for smap in self.smaps:
+            if smap == 'grad':
+                saliency_map_path = os.path.join(self.smap_dir, f'{trial_name}.npy')
+            else:
+                saliency_map_path = os.path.join(self.smap_dir, f'{trial_name[:-4]}/{trial_name[:-4]}_{smap}.npy')
+            
+            try:
+                saliency_map = np.load(saliency_map_path).squeeze()
+            
+                
+            #     saliency_map = np.load(os.path.join(self.smap_dir, f'{trial_name}.npy')).squeeze()
+            # else:
+            #     saliency_map = np.load(os.path.join(self.smap_dir, f'{trial_name[:-4]}/{trial_name[:-4]}_{smap}.npy'))
+            # # print(saliency_map.shape)
+            # print(f'{trial_name}_{smap}')
+            # try:
+            #     saliency_map = (saliency_map - np.min(saliency_map[:]))/(np.max(saliency_map) - np.min(saliency_map))
+            except:
+                traces[smap] = -1
+                print(f'skipping {trial_name} {smap}')
+                continue
+
+            data = [d for d in data if (d[0] != 0) or (d[1]!=0)]
+            for i, row in enumerate(data):
+                x, y = data[i]
+                if x >= 1280:
+                    x = 1279
+                elif x <0:
+                    x = 0
+                if y >= 720:
+                    y =719
+                elif y<0:
+                    y=0
+                data[i] = [int(x),int(y)] 
+            traces[smap] = [saliency_map[d[1], d[0]] for d in data]
+        return traces
+
+
     def computeFixationTraces(self, trial_name, fixations):
         self.readAllFixations(trial_name)
         saliency_map = np.load(f'../smaps/gen/{trial_name}.npy').squeeze()
@@ -415,16 +461,16 @@ class SaliencyTrace():
             if len(data):
                 self.avg_fixations[sub] = self.computeFixationTraces(trial_name, data)
 
-        
-    
     def computeTraceForALL(self, trial_name):
         self.readAllData(trial_name)
         subject_ids = [k for k in self.data_frac.keys() if self.data_frac[k] > 0.5]
         subject_ids.sort()
-        self.trace = {}
+        self.traces = {}
         for subject in subject_ids:
-            self.trace[subject] = self.computeTrace(trial_name, self.timeseries[subject])
-    
+            # self.trace[subject] = self.computeTrace(trial_name, self.timeseries[subject])
+            self.traces[subject] = self.computeTraces(trial_name, self.timeseries[subject])
+            
+
     def plotTrace(self, trial_name):
         self.computeTraceForALL(trial_name)
         plt.clf()
@@ -438,20 +484,23 @@ class SaliencyTrace():
     def computeDistance(self, trial_name):
         print(f'{trial_name}')
         self.computeTraceForALL(trial_name)
-        subject_ids = list(self.trace.keys())
+        subject_ids = list(self.traces.keys())
         subject_ids.sort()
         distance_matrix = np.empty((len(subject_ids), len(subject_ids)))
-        for i, keyi in enumerate(subject_ids):
-            for j, keyj in enumerate(subject_ids):
-                distance_matrix[i,j] = dtw(self.trace[keyi][:1000], self.trace[keyj][:1000])
-        plt.clf()
-        fig, ax = plt.subplots(1,1)
-        img = ax.imshow(distance_matrix)
-        ax.set_xticks(list(range(len(subject_ids))))
-        ax.set_xticklabels(subject_ids, rotation=90)
-        fig.colorbar(img)
-        plt.tight_layout()
-        plt.savefig(f'distance_dtw_trace/{trial_name}.png')
+        for smap in tqdm(self.smaps):
+            for i, keyi in enumerate(subject_ids):
+                for j, keyj in enumerate(subject_ids):
+                    distance_matrix[i,j] = dtw(self.traces[keyi][smap][:1000], self.traces[keyj][smap][:1000])
+            plt.clf()
+            fig, ax = plt.subplots(1,1)
+            img = ax.imshow(distance_matrix)
+            ax.set_xticks(list(range(len(subject_ids))))
+            ax.set_xticklabels(subject_ids, rotation=90)
+            fig.colorbar(img)
+            plt.tight_layout()
+            save_dir = f'distance_dtw_trace_smaps/{trial_name}'
+            os.makedirs(save_dir, exist_ok=True)
+            plt.savefig(f'distance_dtw_trace_smaps/{trial_name}/{trial_name}_{smap}.png', dpi=300)
 
     def compareTrials(self):
         data_dir = '../asc_data_v1'
@@ -484,19 +533,43 @@ class SaliencyTrace():
             plt.savefig(f'comparison_{name}.png')
             
 class TraceAnalyzer():
-    def __init__(self, trial_name) -> None:
+    def __init__(self, trial_name, smaps=['all']) -> None:
+
         self.trial_name = trial_name
-        self.st = SaliencyTrace()
+        self.st = SaliencyTrace(smaps = smaps)
         
 
     def representation(self, type ='avg'):
         self.st.computeTraceForALL(self.trial_name)
-        self.traces = self.st.trace
-        dict = {}
-        for sub in self.traces.keys():
-            dict[sub] = np.mean(self.traces[sub])
-        return dict
+        self.traces = self.st.traces
+        # dict = {}
+        # for sub in self.traces.keys():
+        #     dict[sub] = np.mean(self.traces[sub])
+        # return dict
         # return {sub: np.mean(self.traces[sub] for sub in self.traces.keys())}
+    
+    def metrics_all_saliency(self):
+        self.representation()
+        done = [d.rstrip().split(' ')[0] for d in open('ttest_trace_avg_smaps.txt')]
+        for smap in self.st.smaps:
+            if f'{self.trial_name[:-4]}_{smap}' in done:
+                continue
+            data = [[sub,np.mean(traces[smap])] for sub, traces in self.traces.items() if traces[smap] != -1]
+            data.sort(key=lambda x: x[0])
+            # print(data)
+            plt.clf()
+            plt.bar(list(range(len(data))), [d[1] for d in data])
+            plt.xticks(list(range(len(data))), [d[0] for d in data], rotation=90)
+            plt.grid()
+            plt.tight_layout()
+            dir  = os.path.join('trace_rep_smaps', self.trial_name[:-4])
+            os.makedirs(dir, exist_ok=True)
+            save_name = os.path.join(dir,  f'{self.trial_name[:-4]}_{smap}.png' )
+            plt.savefig(save_name,  dpi=300)
+            a = [d[1] for d in data if d[0].startswith('1')]
+            b = [d[1] for d in data if d[0].startswith('2')]
+            with  open('ttest_trace_avg_smaps.txt', 'a') as f:
+                print(f'{self.trial_name[:-4]}_{smap}', ttest_ind(a, b), file=f)
         
     def metrics(self):
         rep = self.representation()
@@ -731,6 +804,56 @@ if __name__ == '__main__':
     'visual search form 24_1.jpg',
     'Freeviewingstillimage_88_cutout.tif',
     'visual search form 32_1.jpg']
+
+    trials_images_subset =['Freeviewingstillimage_1.jpg',
+    'Freeviewingstillimage_2.jpg',
+    'Freeviewingstillimage_4.jpg',
+    'Freeviewingstillimage_5.jpg',
+    'Freeviewingstillimage_93.jpg',
+    'Freeviewingstillimage_7.jpg',
+    'Freeviewingstillimage_8.jpg',
+    'Freeviewingstillimage_9.jpg',
+    'Freeviewingstillimage_10.jpg',
+    'Freeviewingstillimage_11.jpg',
+    'Freeviewingstillimage_12.jpg',
+    'Freeviewingstillimage_13.jpg',
+    'Freeviewingstillimage_15.jpg',
+    'Freeviewingstillimage_16.jpg',
+    'Freeviewingstillimage_17.jpg',
+    'Freeviewingstillimage_18.jpg',
+    'Freeviewingstillimage_19.jpg',
+    'Freeviewingstillimage_20.jpg',
+    'Freeviewingstillimage_21.jpg',
+    'Freeviewingstillimage_22.jpg',
+    'Freeviewingstillimage_23.jpg',
+    'Freeviewingstillimage_24.jpg',
+    'Freeviewingstillimage_25.jpg',
+    'Freeviewingstillimage_26.jpg',
+    'Freeviewingstillimage_27.jpg',
+    'Freeviewingstillimage_28.jpg',
+    'Freeviewingstillimage_29.jpg',
+    'Freeviewingstillimage_10_cutout.tif',
+    'Freeviewingstillimage_31.jpg',
+    'Freeviewingstillimage_93_cutout.tif',
+    'Freeviewingstillimage_33.jpg',
+    'Moviestillimage_8.jpg',
+    'Freeviewingstillimage_35.jpg',
+    'Freeviewingstillimage_36.jpg',
+    'Freeviewingstillimage_28_cutout.tif',
+    'Moviestillimage_6.jpg',
+    'Freeviewingstillimage_39.jpg',
+    'Freeviewingstillimage_40.jpg',
+    'Freeviewingstillimage_41.jpg',
+    'Freeviewingstillimage_92.jpg',
+    'Freeviewingstillimage_88.jpg',
+    'Freeviewingstillimage_36_cutout.tif',
+    'Freeviewingstillimage_45.jpg',
+    'Freeviewingstillimage_46.jpg',
+    'Freeviewingstillimage_47.jpg',
+    'Moviestillimage_12.jpg',
+    'Freeviewingstillimage_49.jpg',
+    'Freeviewingstillimage_50.jpg',
+    'Freeviewingstillimage_88_cutout.tif']
     trials = ['Opening Movie',
     'Movie 3.mp4',
     'Movie 6.mp4',
@@ -834,13 +957,15 @@ if __name__ == '__main__':
     trials_images.sort(reverse=True)
     stats = {}
 
-    for trial_name in trials_images:
+    for trial_name in tqdm(trials_images_subset):
+        # print(trial_name)
         # fr.plotDistanceMatrix(trial_name, vel=True)
     #     # da.plotDistanceMatrixTrialWise(trial_name)
         # st.computeDistance(trial_name)
         # st.plotTrace(trial_name)
-        # ta = TraceAnalyzer(trial_name)
-        # # ta.metrics()
+        ta = TraceAnalyzer(trial_name)
+        ta.metrics_all_saliency()
+        # break
         # ta.plotTraces()'
 
 
@@ -858,13 +983,13 @@ if __name__ == '__main__':
         
         #analyze the saved fixation
         # stats = {}
-        print(trial_name)
-        fa =FixationAnalyzer(trial_name)
-        stats[trial_name[:-4]] = fa.compute_metrics()
+        # print(trial_name)
+        # fa =FixationAnalyzer(trial_name)
+        # stats[trial_name[:-4]] = fa.compute_metrics()
     
-    f =open('avg_fixation_stats_all_trials.pkl', 'wb')
-    pkl.dump(stats, f)
-    f.close()
+    # f =open('avg_fixation_stats_all_trials.pkl', 'wb')
+    # pkl.dump(stats, f)
+    # f.close()
 
 
     
