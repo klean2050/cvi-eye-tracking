@@ -5,283 +5,56 @@ from matplotlib import pyplot as plt
 from tslearn.metrics import dtw
 from scipy.stats import ttest_ind
 
-sys.path.append("./gazemae/gazemae")
-#from settings import *
-
-
-class Subject:
-    def __init__(self, root, subject_id):
-        """
-        Input: data path, subject id
-        Function: locates and reads eye-tracking files
-        """
-        self.id = subject_id
-        self.asc_file = root + self.id + ".asc"
-        with open(self.asc_file, "r") as f:
-            self.data = f.readlines()
-
-    def get_trial_list(self, trial_name, numeric=False):
-        trial_active, trial = False, []
-        for line in self.data:
-            if trial_active:
-                if "End Trial {}".format(trial_name) in line:
-                    break
-                elif numeric and line[0].isdigit():
-                    trial.append(line)
-                elif not numeric:
-                    trial.append(line)
-            elif "Start Trial {}".format(trial_name) in line:
-                trial_active = True
-            else:
-                continue
-        return trial
-
-    def get_fixations(self, left=True):
-        this_eye = "L" if left else "R"
-        fixation_active, fixations = False, []
-        for line in self.trial:
-            if fixation_active:
-                if f"EFIX {this_eye}" in line:
-                    fixations.append(current_fixation)
-                    fixation_active = False
-                else:
-                    if line[0].isdigit():
-                        current_fixation.append(line)
-            elif f"SFIX {this_eye}" in line:
-                fixation_active = True
-                current_fixation = []
-            else:
-                continue
-        return fixations
-
-    def get_saccades(self, left=True):
-        this_eye = "L" if left else "R"
-        saccade_active, saccades = False, []
-        for line in self.trial:
-            if saccade_active:
-                if f"ESACC {this_eye}" in line:
-                    saccades.append(current_saccade)
-                    saccade_active = False
-                else:
-                    if line[0].isdigit():
-                        current_saccade.append(line)
-            elif f"SSACC {this_eye}" in line:
-                saccade_active = True
-                current_saccade = []
-            else:
-                continue
-        return saccades
-
-    def fuse_eyes(self, array):
-        # TODO: provide option to fuse eyes
-        out = []
-        for line in array:
-            l = line.split("\t")
-            row = [l[1], l[2], l[4], l[5]]
-            row = [0.0 if set(r.strip()) == {"."} else float(r) for r in row]
-            out.append(row)
-
-        out = np.array(out)
-        out[out < 0] = 0.0
-
-        fused_out = []
-        for (xl, yl, xr, yr) in out:
-            if [xl, yl] == [0, 0]:
-                fused_out.append([xr, yr])
-            elif [xr, yr] == [0, 0]:
-                fused_out.append([xl, yl])
-            else:
-                fused_out.append([(xl + xr) / 2, (yl + yr) / 2])
-
-        fused_out = np.array(fused_out)
-        fraction = 1 - np.sum((fused_out[:, 0] == 0) & (fused_out[:, 1] == 0))
-        fraction /= len(fused_out)
-
-        return fused_out, fraction
-
-    def readTrialData(self, trial_name, vel=False):
-        self.trial = self.get_trial_list(trial_name, numeric=True)
-        data_fusion, fraction = self.fuse_eyes(self.trial)
-
-        if vel:
-            velocity = np.array(
-                [
-                    data_fusion[i + 1] - data_fusion[i]
-                    for i in range(len(data_fusion) - 1)
-                ]
-            )
-            return velocity, fraction
-        else:
-            return data_fusion, fraction
-
-    def extractSaccades(self, trial_name):
-        self.trial = self.get_trial_list(trial_name)
-        numeric = self.get_trial_list(trial_name, numeric=True)
-        if len(self.trial) <= 2:
-            return []
-
-        trial_st = int(numeric[0].split("\t")[0])
-        trial_et = int(numeric[-1].split("\t")[0])
-
-        # get both eye saccades
-        saccades_l = self.get_saccades(left=True)
-        saccades_r = self.get_saccades(left=False)
-        self.saccades = [saccades_l, saccades_r]
-
-        # compute the intersection between saccades
-        if len(saccades_r) <= len(saccades_l):
-            primary_saccades = saccades_r
-            secondary_saccades = saccades_l
-        else:
-            primary_saccades = saccades_l
-            secondary_saccades = saccades_r
-
-        intersections = []
-        for i, pri_sac in enumerate(primary_saccades):
-            pri_sac_times = [d.split("\t")[0] for d in pri_sac]
-            pri_sac_times = set(pri_sac_times)
-
-            for j, sec_sac in enumerate(secondary_saccades):
-                sec_sac_times = [d.split("\t")[0] for d in sec_sac]
-                sec_sac_times = set(sec_sac_times)
-
-                intersections.append(
-                    [
-                        i,
-                        j,
-                        len(list(pri_sac_times.intersection(sec_sac_times))),
-                    ]
-                )
-        intersections.sort(key=lambda x: x[-1], reverse=True)
-
-        saccade_idxes = intersections[: len(primary_saccades)]
-        saccades_all = []
-        for idx in saccade_idxes:
-            a = [int(d.split("\t")[0]) for d in primary_saccades[idx[0]]]
-            b = [int(d.split("\t")[0]) for d in secondary_saccades[idx[1]]]
-
-            time_stamps = list(set(a).intersection(set(b)))
-            if len(time_stamps) < 5:
-                continue
-
-            sac_st = np.min(time_stamps) - trial_st
-            sac_et = np.max(time_stamps) - trial_et
-            saccade_raw = [
-                d
-                for d in primary_saccades[idx[0]]
-                if int(d.split("\t")[0]) in time_stamps
-            ]
-
-            fused_saccade, fraction = self.fuse_eyes(saccade_raw)
-            saccades_all.append([fused_saccade, fraction, sac_st, sac_et])
-
-        return saccades_all
-
-    def extractFixations(self, trial_name):
-        self.trial = self.get_trial_list(trial_name)
-        numeric = self.get_trial_list(trial_name, numeric=True)
-        if len(self.trial) <= 2:
-            return []
-
-        trial_st = int(numeric[0].split("\t")[0])
-        trial_et = int(numeric[-1].split("\t")[0])
-
-        # get both eye fixations
-        fixations_l = self.get_fixations(left=True)
-        fixations_r = self.get_fixations(left=False)
-        self.fixations = [fixations_l, fixations_r]
-
-        # compute the intersection between fixations
-        if len(fixations_r) <= len(fixations_l):
-            primary_fixations = fixations_r
-            secondary_fixations = fixations_l
-        else:
-            primary_fixations = fixations_l
-            secondary_fixations = fixations_r
-
-        intersections = []
-        for i, pri_fix in enumerate(primary_fixations):
-            pri_fix_times = [d.split("\t")[0] for d in pri_fix]
-            pri_fix_times = set(pri_fix_times)
-
-            for j, sec_fix in enumerate(secondary_fixations):
-                sec_fix_times = [d.split("\t")[0] for d in sec_fix]
-                sec_fix_times = set(sec_fix_times)
-
-                intersections.append(
-                    [
-                        i,
-                        j,
-                        len(list(pri_fix_times.intersection(sec_fix_times))),
-                    ]
-                )
-        intersections.sort(key=lambda x: x[-1], reverse=True)
-
-        fixation_idxes = intersections[: len(primary_fixations)]
-        fixations_all = []
-        for idx in fixation_idxes:
-            a = [int(d.split("\t")[0]) for d in primary_fixations[idx[0]]]
-            b = [int(d.split("\t")[0]) for d in secondary_fixations[idx[1]]]
-            time_stamps = list(set(a).intersection(set(b)))
-            if len(time_stamps) < 10:
-                break
-
-            fixation_st = np.min(time_stamps) - trial_st
-            fixation_et = np.max(time_stamps) - trial_et
-            fixation_raw = [
-                d
-                for d in primary_fixations[idx[0]]
-                if int(d.split("\t")[0]) in time_stamps
-            ]
-
-            fused_fixation, fraction = self.fuse_eyes(fixation_raw)
-            fixations_all.append([fused_fixation, fraction, fixation_st, fixation_et])
-
-        return fixations_all
+from load_subject import Subject
 
 
 class DTWAnalysis:
-    def readAllData(self, trial_name):
-        data_dir = "../asc_data_v1"
-        subject_ids = glob.glob(os.path.join(data_dir, "*.asc"))
+    def read_all_subjects(self, root, trial_name, vel=False):
+        subject_ids = glob.glob(os.path.join(root, "*.asc"))
         subject_ids = [os.path.basename(d)[:-4] for d in subject_ids]
+
         self.timeseries = {}
         self.data_frac = {}
         for subject in subject_ids:
             sub = Subject(subject)
-            trial_data, frac = sub.readTrialData(trial_name, vel=self.vel)
+            trial_data, frac = sub.extract_data(trial_name, vel)
             self.timeseries[subject] = trial_data
             self.data_frac[subject] = 1 - frac
 
-    def plotDistanceMatrixTrialWise(self, trial_name, vel=False):
-        print(f"distance matrix for  {trial_name}")
-        self.vel = vel
-        self.readAllData(trial_name)
+    def plot_dmatrix(self, dmatrix, ids, outdir):
+        plt.clf()
+        fig, ax = plt.subplots(1, 1)
+        img = ax.imshow(dmatrix)
+        ax.set_xticks(list(range(len(ids))))
+        ax.set_xticklabels(ids, rotation=90)
+        fig.colorbar(img)
+        plt.tight_layout()
+
+        folder_name = "dmatrix_vel" if vel else "dmatrix"
+        outdir = os.path.join(outdir, folder_name)
+        os.makedirs(outdir, exist_ok=True)
+        plt.savefig(os.path.join(outdir, f"{trial_name}.png"))
+
+    def get_dmatrix(self, trial_name, vel=False):
+        self.read_all_subjects(trial_name, vel)
         subject_ids = [k for k in self.data_frac.keys() if self.data_frac[k] > 0.5]
         subject_ids.sort()
+
         distance_matrix = np.empty((len(subject_ids), len(subject_ids)))
         for i, keyi in enumerate(subject_ids):
             for j, keyj in enumerate(subject_ids):
                 distance_matrix[i, j] = dtw(
                     self.timeseries[keyi][:1000], self.timeseries[keyj][:1000]
                 )
-        plt.clf()
-        fig, ax = plt.subplots(1, 1)
-        img = ax.imshow(distance_matrix)
-        ax.set_xticks(list(range(len(subject_ids))))
-        ax.set_xticklabels(subject_ids, rotation=90)
-        fig.colorbar(img)
-        plt.tight_layout()
-        if self.vel:
-            plt.savefig(f"distance_matrix_vel/{trial_name}.png")
-        else:
-            plt.savefig(f"distance_matrix/{trial_name}.png")
+        return distance_matrix
 
 
 class SaliencyTrace:
-    def __init__(self, root, smaps=["all"]):
+    def __init__(self, root, smap_dir, smaps=["all"]):
         self.root = root
-        self.smap_dir = "cvi-extra/saliency_maps/"
+        self.ids = glob.glob(os.path.join(self.root, "*.asc"))
+        self.ids = [os.path.basename(d)[:-4] for d in self.ids]
+        self.smap_dir = smap_dir # "cvi-extra/saliency_maps/"
         if "all" in smaps:
             self.smaps = [
                 "0",
@@ -306,28 +79,22 @@ class SaliencyTrace:
             data[i] = [int(x), int(y)]
         return data
 
-    def readAllData(self, trial_name):
-        subject_ids = glob.glob(os.path.join(self.root, "*.asc"))
-        subject_ids = [os.path.basename(d)[:-4] for d in subject_ids]
-
+    def read_data_all(self, trial_name, vel=False):
         self.timeseries, self.data_frac = {}, {}
-        for subject in subject_ids:
+        for subject in self.ids:
             sub = Subject(self.root, subject)
-            trial_data, fraction = sub.readTrialData(trial_name)
+            trial_data, fraction = sub.extract_data(trial_name, vel)
             self.timeseries[subject] = trial_data
             self.data_frac[subject] = 1 - fraction
 
-    def readAllFixations(self, trial_name):
-        subject_ids = glob.glob(os.path.join(self.root, "*.asc"))
-        subject_ids = [os.path.basename(d)[:-4] for d in subject_ids]
-
+    def read_fixations_all(self, trial_name):
         self.fixation_timeseries = {}
-        for subject in subject_ids:
+        for subject in self.ids:
             sub = Subject(self.root, subject)
-            fixations = sub.extractFixations(trial_name)
+            fixations = sub.extract_fixations(trial_name)
             self.fixation_timeseries[subject] = fixations
 
-    def computeTraces(self, trial_name, data):
+    def compute_data_traces(self, trial_name, data):
         name = trial_name[:-4]
         traces = {}
         for smap in self.smaps:
@@ -345,8 +112,8 @@ class SaliencyTrace:
             traces[smap] = [saliency_map[d[1], d[0]] for d in self.fix_bounds(data)]
         return traces
 
-    def computeFixationTraces(self, trial_name, fixations):
-        self.readAllFixations(trial_name)
+    def compute_fixation_traces(self, trial_name, fixations):
+        self.read_fixations_all(trial_name)
         smap_path = os.path.join(self.smap_dir, "gen", f"{trial_name}.npy")
         saliency_map = np.load(smap_path).squeeze()
         saliency_map -= np.min(saliency_map[:])
@@ -361,14 +128,14 @@ class SaliencyTrace:
 
         return avg_fixations
 
-    def computeFixationTraceForAll(self, trial_name):
-        self.readAllFixations(trial_name)
+    def compute_avg_fixations_all(self, trial_name):
+        self.read_fixations_all(trial_name)
         self.avg_fixations = {}
         for sub, data in self.fixation_timeseries.items():
-            self.avg_fixations[sub] = self.computeFixationTraces(trial_name, data)
+            self.avg_fixations[sub] = self.compute_fixation_traces(trial_name, data)
 
-    def computeTraceForALL(self, trial_name):
-        self.readAllData(trial_name)
+    def compute_trace_all(self, trial_name):
+        self.read_data_all(trial_name)
         subject_ids = [k for k in self.data_frac.keys() if self.data_frac[k] > 0.5]
         subject_ids.sort()
 
@@ -436,8 +203,8 @@ class SaliencyTrace:
             comparison = {}
             for subject in subject_ids:
                 sub = Subject(subject)
-                data0, frac0 = sub.readTrialData(pair[0])
-                data1, frac1 = sub.readTrialData(pair[1])
+                data0, frac0 = sub.extract_data(pair[0])
+                data1, frac1 = sub.extract_data(pair[1])
                 if (frac0 < 0.5) and (frac1 < 0.5):
                     trace0 = computeTrace(pair[0], data0)
                     trace1 = computeTrace(pair[1], data1)
@@ -662,9 +429,9 @@ if __name__ == "__main__":
     ctrl_keys = ["2003_1", "2002_2", "2002_1", "2004_2", "2004_1", "2006_1"]
 
     sub = Subject(root, "1003_3")
-    data, fr = sub.readTrialData(trial, vel)
-    allfix = sub.extractFixations(trial)
-    allsac = sub.extractSaccades(trial)
+    data, fr = sub.extract_data(trial, vel)
+    allfix = sub.extract_fixations(trial)
+    allsac = sub.extract_saccades(trial)
 
     trials_images_subset = [
         "Freeviewingstillimage_1.jpg",
