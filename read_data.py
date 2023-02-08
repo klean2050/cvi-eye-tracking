@@ -6,7 +6,7 @@ from tslearn.metrics import dtw
 from scipy.stats import ttest_ind
 
 sys.path.append("./gazemae/gazemae")
-from settings import *
+#from settings import *
 
 
 class Subject:
