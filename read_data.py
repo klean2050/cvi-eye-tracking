@@ -5,48 +5,7 @@ from matplotlib import pyplot as plt
 from tslearn.metrics import dtw
 from scipy.stats import ttest_ind
 
-from load_subject import Subject
-
-
-class DTWAnalysis:
-    def read_all_subjects(self, root, trial_name, vel=False):
-        subject_ids = glob.glob(os.path.join(root, "*.asc"))
-        subject_ids = [os.path.basename(d)[:-4] for d in subject_ids]
-
-        self.timeseries = {}
-        self.data_frac = {}
-        for subject in subject_ids:
-            sub = Subject(subject)
-            trial_data, frac = sub.extract_data(trial_name, vel)
-            self.timeseries[subject] = trial_data
-            self.data_frac[subject] = 1 - frac
-
-    def plot_dmatrix(self, dmatrix, ids, outdir):
-        plt.clf()
-        fig, ax = plt.subplots(1, 1)
-        img = ax.imshow(dmatrix)
-        ax.set_xticks(list(range(len(ids))))
-        ax.set_xticklabels(ids, rotation=90)
-        fig.colorbar(img)
-        plt.tight_layout()
-
-        folder_name = "dmatrix_vel" if vel else "dmatrix"
-        outdir = os.path.join(outdir, folder_name)
-        os.makedirs(outdir, exist_ok=True)
-        plt.savefig(os.path.join(outdir, f"{trial_name}.png"))
-
-    def get_dmatrix(self, trial_name, vel=False):
-        self.read_all_subjects(trial_name, vel)
-        subject_ids = [k for k in self.data_frac.keys() if self.data_frac[k] > 0.5]
-        subject_ids.sort()
-
-        distance_matrix = np.empty((len(subject_ids), len(subject_ids)))
-        for i, keyi in enumerate(subject_ids):
-            for j, keyj in enumerate(subject_ids):
-                distance_matrix[i, j] = dtw(
-                    self.timeseries[keyi][:1000], self.timeseries[keyj][:1000]
-                )
-        return distance_matrix
+from subject import Subject
 
 
 class SaliencyTrace:
@@ -54,7 +13,7 @@ class SaliencyTrace:
         self.root = root
         self.ids = glob.glob(os.path.join(self.root, "*.asc"))
         self.ids = [os.path.basename(d)[:-4] for d in self.ids]
-        self.smap_dir = smap_dir # "cvi-extra/saliency_maps/"
+        self.smap_dir = smap_dir  # "cvi-extra/saliency_maps/"
         if "all" in smaps:
             self.smaps = [
                 "0",
@@ -295,188 +254,9 @@ class TraceAnalyzer:
         plt.savefig(f"trace_group_wise/{self.trial_name[:-4]}_cvi.png", dpi=300)
 
 
-class FixationAnalyzer:
-    def __init__(self, root, trial_name):
-        self.root = root
-        self.trial_name = trial_name
-        self.avg_fixation = pickle.load(
-            open(
-                os.path.join(self.root, "avg_fixation_trial_wise", trial_name + ".pkl"),
-                "rb",
-            )
-        )
-
-    def latency_first_fixation(self):
-        x_y = [[sub, data[0][2]] for sub, data in self.avg_fixation.items()]
-        x_y.sort(key=lambda x: x[0])
-        return x_y
-
-    def saliency_first_fixation(self):
-        x_y = [[sub, data[0][0]] for sub, data in self.avg_fixation.items()]
-        x_y.sort(key=lambda x: x[0])
-        return x_y
-
-    def saliency_longest_fixation(self):
-        x_y = []
-        for sub, data in self.avg_fixation.items():
-            data.sort(key=lambda x: x[-1] - x[-2])
-            x_y.append([sub, data[-1][0]])
-        x_y.sort(key=lambda x: x[0])
-        return x_y
-
-    def latency_longest_fixation(self):
-        x_y = []
-        for sub, data in self.avg_fixation.items():
-            data.sort(key=lambda x: x[-1] - x[-2])
-            x_y.append([sub, data[-1][2]])
-        x_y.sort(key=lambda x: x[0])
-        return x_y
-
-    def latency_maximum_saliency(self):
-        x_y = []
-        for sub, data in self.avg_fixation.items():
-            data.sort(key=lambda x: x[0])
-            x_y.append([sub, data[-1][2]])
-        x_y.sort(key=lambda x: x[0])
-        return x_y
-
-    def compute_metrics(self):
-        stats = {}
-        plt.clf()
-        x_y = self.latency_first_fixation()
-        plt.subplot(2, 3, 1)
-        plt.bar(list(range(len(x_y))), [d[1] for d in x_y])
-        plt.xticks(list(range(len(x_y))), [d[0] for d in x_y], rotation=90)
-        plt.grid()
-        plt.tight_layout()
-        plt.title("latency_first_fixation")
-        plt.ylabel("time")
-        a = [d[1] for d in x_y if d[0].startswith("1")]
-        b = [d[1] for d in x_y if d[0].startswith("2")]
-        stat, p_value = ttest_ind(a, b)
-        stats["latency_first_fixation"] = [stat, p_value]
-
-        x_y = self.saliency_first_fixation()
-        plt.subplot(2, 3, 2)
-        plt.bar(list(range(len(x_y))), [d[1] for d in x_y])
-        plt.xticks(list(range(len(x_y))), [d[0] for d in x_y], rotation=90)
-        plt.grid()
-        plt.tight_layout()
-        plt.title("saliency_first_fixation")
-        plt.ylabel("time")
-        a = [d[1] for d in x_y if d[0].startswith("1")]
-        b = [d[1] for d in x_y if d[0].startswith("2")]
-        stat, p_value = ttest_ind(a, b)
-        stats["saliency_first_fixation"] = [stat, p_value]
-
-        x_y = self.saliency_longest_fixation()
-        plt.subplot(2, 3, 3)
-        plt.bar(list(range(len(x_y))), [d[1] for d in x_y])
-        plt.xticks(list(range(len(x_y))), [d[0] for d in x_y], rotation=90)
-        plt.grid()
-        plt.tight_layout()
-        plt.title("saliency_longest_fixation")
-        plt.ylabel("time")
-        a = [d[1] for d in x_y if d[0].startswith("1")]
-        b = [d[1] for d in x_y if d[0].startswith("2")]
-        stat, p_value = ttest_ind(a, b)
-        stats["saliency_longest_fixation"] = [stat, p_value]
-
-        x_y = self.latency_longest_fixation()
-        plt.subplot(2, 3, 4)
-        plt.bar(list(range(len(x_y))), [d[1] for d in x_y])
-        plt.xticks(list(range(len(x_y))), [d[0] for d in x_y], rotation=90)
-        plt.grid()
-        plt.tight_layout()
-        plt.title("latency_longest_fixation")
-        plt.ylabel("time")
-        a = [d[1] for d in x_y if d[0].startswith("1")]
-        b = [d[1] for d in x_y if d[0].startswith("2")]
-        stat, p_value = ttest_ind(a, b)
-        stats["latency_longest_fixation"] = [stat, p_value]
-
-        x_y = self.latency_maximum_saliency()
-        plt.subplot(2, 3, 5)
-        plt.bar(list(range(len(x_y))), [d[1] for d in x_y])
-        plt.xticks(list(range(len(x_y))), [d[0] for d in x_y], rotation=90)
-        plt.grid()
-        plt.tight_layout()
-        plt.title("latency_maximum_saliency")
-        plt.ylabel("time")
-        a = [d[1] for d in x_y if d[0].startswith("1")]
-        b = [d[1] for d in x_y if d[0].startswith("2")]
-        stat, p_value = ttest_ind(a, b)
-        stats["latency_maximum_saliency"] = [stat, p_value]
-        plt.savefig("output/fixation_stats/" + self.trial_name[:-4] + ".png", dpi=300)
-        return stats
-
-
 if __name__ == "__main__":
     root = "/home/kavra/Datasets/medical/cvi_eyetracking/asc_data_v1/"
     trial, vel = "Freeviewingstillimage_1.jpg", False
 
-    cvi_keys = [
-        "1007_4",
-        "1007_1",
-        "1008_1",
-        "1003_3",
-        "1018_2",
-        "1003_2",
-        "1005_1",
-        "1017_2",
-        "1007_3",
-    ]
-    ctrl_keys = ["2003_1", "2002_2", "2002_1", "2004_2", "2004_1", "2006_1"]
-
     sub = Subject(root, "1003_3")
     data, fr = sub.extract_data(trial, vel)
-    allfix = sub.extract_fixations(trial)
-    allsac = sub.extract_saccades(trial)
-
-    trials_images_subset = [
-        "Freeviewingstillimage_1.jpg",
-        "Freeviewingstillimage_2.jpg",
-        "Freeviewingstillimage_4.jpg",
-        "Freeviewingstillimage_5.jpg",
-        "Freeviewingstillimage_7.jpg",
-        "Freeviewingstillimage_8.jpg",
-        "Freeviewingstillimage_9.jpg",
-        "Freeviewingstillimage_10.jpg",
-        "Freeviewingstillimage_10_cutout.tif",
-        "Moviestillimage_8.jpg",
-        "Moviestillimage_6.jpg",
-        "Freeviewingstillimage_50.jpg",
-        "Freeviewingstillimage_88_cutout.tif",
-    ]
-
-    # for trial_name in tqdm(trials_images_subset):
-    # print(trial_name)
-    # fr.plotDistanceMatrix(trial_name, vel=True)
-    #     # da.plotDistanceMatrixTrialWise(trial_name)
-    # st.computeDistance(trial_name)
-    # st.plotTrace(trial_name)
-    # ta = TraceAnalyzer(trial_name)
-    # ta.metrics_all_saliency()
-    # break
-    # ta.plotTraces()'
-
-    # save the avg fixation
-    # print(trial_name)
-    # file_name =os.path.join('avg_fixation_trial_wise', trial_name + '.pkl')
-    # if os.path.isfile(file_name):
-    #     continue
-    # st = SaliencyTrace()
-    # st.computeFixationTraceForAll(trial_name)
-    # f = open(os.path.join('avg_fixation_trial_wise', trial_name + '.pkl'), 'wb')
-    # pkl.dump(st.avg_fixations, f)
-    # f.close()
-
-    # analyze the saved fixation
-    # stats = {}
-    # print(trial_name)
-    # fa =FixationAnalyzer(trial_name)
-    # stats[trial_name[:-4]] = fa.compute_metrics()
-
-    # f =open('avg_fixation_stats_all_trials.pkl', 'wb')
-    # pkl.dump(stats, f)
-    # f.close()

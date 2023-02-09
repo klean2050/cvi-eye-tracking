@@ -13,11 +13,11 @@ class Subject:
         with open(self.asc_file, "r") as f:
             self.data = f.readlines()
 
-    def get_trial_list(self, trial_name, numeric=False):
+    def __trial_list(self, trial_name, numeric=False):
         """
-        Input: name of trial (str) and if only numbers (bool)
+        Input: name of trial (str) and if only measures (bool)
         Function: iterates over the data to record this trial
-        Returns: trial time-series where each element is a 4-item list
+        Returns: list of measurement rows (str) for <trial_name>
         """
         trial_active, trial = False, []
         for line in self.data:
@@ -34,7 +34,7 @@ class Subject:
                 continue
         return trial
 
-    def get_fixations(self, left=True):
+    def __fixation_list(self, left=True):
         """
         Input: whether to consider the left eye or not
         Function: iterates over the data to record [SFIX-EFIX] intervals
@@ -57,7 +57,7 @@ class Subject:
                 continue
         return fixations
 
-    def get_saccades(self, left=True):
+    def __saccade_list(self, left=True):
         """
         Input: whether to consider the left eye or not
         Function: iterates over the data to record [SSAC-ESAC] intervals
@@ -80,11 +80,11 @@ class Subject:
                 continue
         return saccades
 
-    def fuse_eyes(self, array, which="both"):
+    def __fuse_eyes(self, array, which="both"):
         """
-        Input: array of shape (.,.) and which eye to consider
+        Input: list of rows (str) and which eye to consider
         Function: iterates over the data to fuse L and R (x,y) measures
-        Returns: array of shape (.,.) and fraction of non-zero data
+        Returns: (num_coords, 2) array and fraction of non-zero data
         """
         out = []
         for line in array:
@@ -115,39 +115,35 @@ class Subject:
         """
         Input: trial name (str) and whether to consider velocity (bool)
         Function: loads the trial, fuses eyes and differentiates for vel
-        Returns: array of shape (.,.) and fraction of non-zero data
+        Returns: (num_coords, 2) array and fraction of non-zero data
         """
-        self.trial = self.get_trial_list(trial_name, numeric=True)
-        data_fusion, fraction = self.fuse_eyes(self.trial)
+        self.trial = self.__trial_list(trial_name, numeric=True)
+        data_fusion, fraction = self.__fuse_eyes(self.trial)
 
         if vel:
-            velocity = np.array(
-                [
-                    data_fusion[i + 1] - data_fusion[i]
-                    for i in range(len(data_fusion) - 1)
-                ]
-            )
-            return velocity, fraction
+            velocity = [[0.0, 0.0]]
+            velocity += [
+                data_fusion[i + 1] - data_fusion[i]
+                for i in range(len(data_fusion) - 1)
+            ]
+            return np.array(velocity), fraction
         else:
             return data_fusion, fraction
 
     def extract_saccades(self, trial_name):
         """
         Input: trial name (str)
-        Function: loads the trial, (.....)
-        Returns: saccade array of shape (.,.)
+        Function: loads the trial and finds common L, R saccades
+        Returns: list of saccades, each a 4-item dictionary
         """
-        self.trial = self.get_trial_list(trial_name)
-        numeric = self.get_trial_list(trial_name, numeric=True)
+        self.trial = self.__trial_list(trial_name)
+        numeric = self.__trial_list(trial_name, numeric=True)
         if len(self.trial) <= 2:
             return []
 
-        trial_st = int(numeric[0].split("\t")[0])
-        trial_et = int(numeric[-1].split("\t")[0])
-
         # get both eye saccades
-        saccades_l = self.get_saccades(left=True)
-        saccades_r = self.get_saccades(left=False)
+        saccades_l = self.__saccade_list(left=True)
+        saccades_r = self.__saccade_list(left=False)
         self.saccades = [saccades_l, saccades_r]
 
         # compute the intersection between saccades
@@ -186,36 +182,40 @@ class Subject:
             if len(time_stamps) < 5:
                 continue
 
-            sac_st = np.min(time_stamps) - trial_st
-            sac_et = np.max(time_stamps) - trial_et
+            trial_start_time = int(numeric[0].split("\t")[0])
+            latency = np.min(time_stamps) - trial_start_time
+            duration = np.max(time_stamps) - np.min(time_stamps)
             saccade_raw = [
                 d
                 for d in primary_saccades[idx[0]]
                 if int(d.split("\t")[0]) in time_stamps
             ]
 
-            fused_saccade, fraction = self.fuse_eyes(saccade_raw)
-            saccades_all.append([fused_saccade, fraction, sac_st, sac_et])
+            fused_saccade, fraction = self.__fuse_eyes(saccade_raw)
+            saccades_all.append({
+                "data": fused_saccade,
+                "fraction": fraction,
+                "latency": latency,
+                "duration": duration
+            })
 
+        saccades_all.sort(key=lambda x: x["latency"])
         return saccades_all
 
     def extract_fixations(self, trial_name):
         """
         Input: trial name (str)
-        Function: loads the trial, (.....)
-        Returns: fixation array of shape (.,.)
+        Function: loads the trial and finds common L, R fixations
+        Returns: list of fixations, each a 4-item dictionary
         """
-        self.trial = self.get_trial_list(trial_name)
-        numeric = self.get_trial_list(trial_name, numeric=True)
+        self.trial = self.__trial_list(trial_name)
+        numeric = self.__trial_list(trial_name, numeric=True)
         if len(self.trial) <= 2:
             return []
 
-        trial_st = int(numeric[0].split("\t")[0])
-        trial_et = int(numeric[-1].split("\t")[0])
-
         # get both eye fixations
-        fixations_l = self.get_fixations(left=True)
-        fixations_r = self.get_fixations(left=False)
+        fixations_l = self.__fixation_list(left=True)
+        fixations_r = self.__fixation_list(left=False)
         self.fixations = [fixations_l, fixations_r]
 
         # compute the intersection between fixations
@@ -253,23 +253,30 @@ class Subject:
             if len(time_stamps) < 10:
                 break
 
-            fixation_st = np.min(time_stamps) - trial_st
-            fixation_et = np.max(time_stamps) - trial_et
+            trial_start_time = int(numeric[0].split("\t")[0])
+            latency = np.min(time_stamps) - trial_start_time
+            duration = np.max(time_stamps) - np.min(time_stamps)
             fixation_raw = [
                 d
                 for d in primary_fixations[idx[0]]
                 if int(d.split("\t")[0]) in time_stamps
             ]
 
-            fused_fixation, fraction = self.fuse_eyes(fixation_raw)
-            fixations_all.append([fused_fixation, fraction, fixation_st, fixation_et])
+            fused_fixation, fraction = self.__fuse_eyes(fixation_raw)
+            fixations_all.append({
+                "data": fused_fixation,
+                "fraction": fraction,
+                "latency": latency,
+                "duration": duration
+            })
 
+        fixations_all.sort(key=lambda x: x["latency"])
         return fixations_all
 
 
 if __name__ == "__main__":
     root = "/home/kavra/Datasets/medical/cvi_eyetracking/asc_data_v1/"
     trial, subject = "Freeviewingstillimage_1.jpg", "1007_1"
-
     sub = Subject(root, subject)
+    print(sub.extract_fixations(trial))
     

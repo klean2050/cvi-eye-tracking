@@ -1,2 +1,4 @@
 output/
 trials/
+__pycache__/
+.*/
