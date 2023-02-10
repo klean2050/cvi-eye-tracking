@@ -9,7 +9,7 @@ Traditionally, the diagnosis of CVI required decreased visual acuity or field de
 
 ## Eye Tracking Technology
 
-A quantitative measure of CVI severity is important to enable accurate counseling of families, as well as prognosis and guidance for individualized therapies and accommodations. Here we develop an eye tracking-based measure of CVI severity that will satisfy the clinical and research needs described above. Eye tracking is an attractive option for measurement of visual function in CVI because in addition to being objective and quantitative, the eye tracking protocols may be designed to assess a multitude of lower- and higher-order visual characteristics. In assessing eye tracking as a potential measure of visual function in CVI, we will use machine learning methods to process the eye tracking data.
+A quantitative measure of CVI severity is important to enable accurate counseling of families, as well as prognosis and guidance for individualized therapies and accommodations. Here we develop an eye tracking-based measure of CVI severity that will satisfy the clinical and research needs described above. Eye tracking is an attractive option for measurement of visual function in CVI because in addition to being objective and quantitative, the eye tracking protocols may be designed to assess a multitude of lower- and higher-order visual characteristics. In assessing eye tracking as a potential measure of visual function in CVI, we will make use if machine learning methods.
 
 
 ## Experiments & Contributions
