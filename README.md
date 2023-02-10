@@ -26,33 +26,4 @@ We selected 64 children with diagnosed CVI along with 12 controls of matching ag
 
 ### Visual Saliency Model
 
-* We compute the trace of the eye tracks with respect to an extracted saliency map.
-* We compare the trace for each subject for a particular trial against all other subjects (with DTW).
-
-## Related Work
-
-https://arxiv.org/pdf/2009.02437.pdf
-Learning a stimulus agnostic representations for the eye track data.
-Using an u-net type architecture for autoencoder to learn the representation for the eye tracks. Using the representations, classify for ctrl/CVI.
-[Image: Screen Shot 2022-03-02 at 11.58.23 AM.png]This architecture can learn the representations at different scales, z1 and z2 being macro and micro scales.
-This type of learned representations are shown to work well for classification setups: classifying the stimuli type, age group, gender, even for biometrics.
-Unsupervised:
-* Using all the eyetracks irrespective of stimuli or the group to learn a model.
-* Since the representations are stimulus agnostic, get the representation for the two groups for particular trials to understand the importance of the trial. For ex: comparing the representations of the two groups (clustering the representations of all the subjects for the stimuli pertaining to the visual search/ visual field defects.)
-1. Get the attention trace
-    1. http://ilab.usc.edu/publications/doc/Tseng_etal13ideal.pdf
-[Image: Screen Shot 2022-03-02 at 12.24.40 PM.png][Image: Screen Shot 2022-03-02 at 3.42.08 PM.png]
-1. Generate spectograms for the trace.
-    1. https://ieeexplore-ieee-org.libproxy2.usc.edu/stamp/stamp.jsp?tp=&arnumber=9581943
-2. Use image like operations, using CNN/TCNs train a classifier for ctrl/CVI
-* 1. https://arxiv.org/pdf/2009.02437.pdf
-    1. learning auto-encoders to represent the temporal signal.
-    2. Uses dialated convolutions.
-    3. Similar to u-net architecture.
-2. https://ieeexplore-ieee-org.libproxy1.usc.edu/stamp/stamp.jsp?tp=&arnumber=9581943
-3. [Deep learning on natural viewing behaviors to differentiate children with fetal alcohol spectrum disorder](http://ilab.usc.edu/publications/doc/Tseng_etal13ideal.pdf)
-    1. Use the saliency models to compute the representation of the stimuli.
-    2. Compute the single dimension temporal representation of the signal.
-    3. Use the CNN (TCNs) to represent the time series
-    4. Learn a classifier
-4. https://github.com/chipbautista/gazemae
+TBD
