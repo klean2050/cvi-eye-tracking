@@ -16,28 +16,18 @@ A quantitative measure of CVI severity is important to enable accurate counselin
 
 We attempt to answer the following questions:
 
-* Which image types & properties disproportionately impact CVI patients?
+* Which image types and properties disproportionately impact CVI patients?
 * What kind of oculomotor features are more discriminative of CVI?
 * Can eye-tracking provide a signature that differentiates CVI patients?
 
 ### Dataset
 
-We selected 64 children with diagnosed CVI along with 12 control subjects of matching age to take part in the experiment. Each subject watched a predetermined set of visual stimuli in a specfiic order. 163 trials in total were used for each subject. To perform this analysis, we excluded subjects with missing trials (21), trials in different order (4) and trials at higher resolution (11). As a result, our dataset consists of 30 CVI and 10 control cases. Out of the 163 trials, we restrict ourselves to those including still images (TBD).
+We selected 64 children with diagnosed CVI along with 12 controls of matching age to take part in the experiment. Each subject watched a predetermined set of visual stimuli in a specfiic order. 163 trials in total were used for each subject. To perform this analysis, we excluded subjects with missing trials (21), trials in different order (4) and trials at higher resolution (11). As a result, our dataset consists of 30 CVI and 10 control cases. Out of the 163 trials, we restrict ourselves to those including still images (TBD).
 
 ### Visual Saliency Model
 
 * We compute the trace of the eye tracks with respect to an extracted saliency map.
 * We compare the trace for each subject for a particular trial against all other subjects (with DTW).
-
-#### Comparing the trials
-
-* We use the following comparable trials:
-    * [‘Freeviewingstillimage_36.jpg’, ‘Freeviewingstillimage_36_cutout.tif’],
-        [‘Freeviewingstillimage_28.jpg’, ‘Freeviewingstillimage_28_cutout.tif’],
-        [‘Freeviewingstillimage_93.jpg’, ‘Freeviewingstillimage_93_cutout.tif’],
-        [‘Freeviewingstillimage_36.jpg’, ‘Freeviewingstillimage_36_cutout.tif’],
-        [‘Freeviewingstillimage_10.jpg’, ‘Freeviewingstillimage_10_cutout.tif’]
-* We aim to see if the difference in more prominent in one group than other.
 
 ## Related Work
 
