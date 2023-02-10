@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from tslearn.metrics import dtw
 
-from subject import Subject
+from process.subject import Subject
 
 
 def fix_bounds(data):

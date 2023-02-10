@@ -1,37 +1,30 @@
 import os, glob, cv2
-from subject import Subject
+from process.subject import Subject
+from process.saliency import SaliencyMap
 
 
-class SaliencyTrace:
-    def __init__(self, root, trial_name, smap_dir, maps=["all"]):
+class ImageTrial:
+    def __init__(self, root, trial_name, smap_dir):
         self.root = root
         self.trial_name = trial_name
+        self.smap_dir = smap_dir
         self.ids = glob.glob(os.path.join(self.root, "*.asc"))
         self.ids = [os.path.basename(d)[:-4] for d in self.ids]
-        self.smap_dir = smap_dir  # "cvi-extra/saliency_maps/"
-        if "all" in maps:
-            self.smaps = [
-                "0",
-                "90",
-                "by",
-                "color",
-                "edges",
-                "intensity",
-                "object",
-                "orientation",
-                "rg",
-                "grad",
-            ]
-        else:
-            self.smaps = maps
 
     def load_trial_img(self):
         img = cv2.imread(os.path.join(self.root, self.trial_name))
         return img
 
-    def load_saliency_map(self, smap):
-        path = os.path.join(self.root, self.smap_dir, smap)
-        return cv2.imread(path)
+    def load_saliency_map(self, smap_type):
+        filename = f"{self.trial_name[:-4]}_{smap_type}.png"
+        path = os.path.join(self.root, self.smap_dir, filename)
+        if os.exists(path):
+            return cv2.imread(path)
+        else:
+            sal = SaliencyMap(smap_type)
+            smap = sal.get_smap(self.load_trial_img())
+            cv2.imwrite(path, smap)
+            return smap
 
     def read_subjects(self, names, vel=False):
         data, frac = {}, {}
