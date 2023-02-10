@@ -22,7 +22,7 @@ We attempt to answer the following questions:
 
 ### Dataset
 
-We selected 64 children with diagnosed CVI along with 12 controls of matching age to take part in the experiment. Each subject watched a predetermined set of visual stimuli in a specfiic order. 163 trials in total were used for each subject. To perform this analysis, we excluded subjects with missing trials (21), trials in different order (4) and trials at higher resolution (11). As a result, our dataset consists of 30 CVI and 10 control cases. Out of the 163 trials, we restrict ourselves to those including still images (TBD).
+We selected 64 children with diagnosed CVI along with 12 controls of matching age to take part in the experiment. Each subject watched a predetermined set of visual stimuli in a specfiic order. 163 trials in total were used for each subject. To perform this analysis, we excluded subjects with missing trials (21), trials in different order (4) and slso trials at higher resolution (11). As a result, our dataset consists of 30 CVI and 10 control cases. Out of the total 163 trials, we restrict ourselves to those including still natural images.
 
 ### Visual Saliency Model
 
