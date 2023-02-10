@@ -1,5 +1,5 @@
 import numpy as np
-
+from utils import fix_bounds
 
 class Subject:
     def __init__(self, root, subject_id):
@@ -272,6 +272,11 @@ class Subject:
 
         fixations_all.sort(key=lambda x: x["latency"])
         return fixations_all
+    
+    def extract_trace(self, trial_name, smap):
+        data = self.extract_data(trial_name)
+        data = fix_bounds([d["data"] for d in data])
+        return [smap[d[1], d[0]] for d in data]
 
 
 if __name__ == "__main__":

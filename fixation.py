@@ -1,5 +1,6 @@
 import numpy as np, cv2, glob
 from scipy import stats
+from utils import fix_bounds
 
 
 def gkern(kernlen=21, nsig=3):
@@ -58,6 +59,18 @@ class FixationAnalyzer:
                 out[u : d + 1, l : r + 1] += gaussian_filter[fu : fd + 1, fl : fr + 1]
 
         return out
+
+    def fixation_trace(self, smap):
+        trace = []
+        data = [f["data"] for f in self.fixations]
+        for fixation in data:
+            fixation = fix_bounds(fixation)
+            saliency = [smap[x, y] for x, y in fixation]
+            trace.extend(saliency)
+        return trace
+
+    def average_saliency(self, smap):
+        return np.mean(self.fixation_trace(smap))
 
     def number_of_fixations(self):
         return len(self.fixations)
