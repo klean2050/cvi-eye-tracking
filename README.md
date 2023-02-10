@@ -37,8 +37,8 @@ Using an u-net type architecture for autoencoder to learn the representation for
 [Image: Screen Shot 2022-03-02 at 11.58.23 AM.png]This architecture can learn the representations at different scales, z1 and z2 being macro and micro scales.
 This type of learned representations are shown to work well for classification setups: classifying the stimuli type, age group, gender, even for biometrics.
 Unsupervised:
-* Using all the eyetracks irrespective of stimuli or the group to learn a model fro representing eyetracks in a unsupervised fashion.
-* Since the representations are stimulus agnostic, get the representation for the two groups for particular trials to understand the importance of the particular trial. For ex: comparing the representations of the two groups (clustering the representations of all the subjects for the stimuli pertaining to the visual search/ visual field defects.)
+* Using all the eyetracks irrespective of stimuli or the group to learn a model.
+* Since the representations are stimulus agnostic, get the representation for the two groups for particular trials to understand the importance of the trial. For ex: comparing the representations of the two groups (clustering the representations of all the subjects for the stimuli pertaining to the visual search/ visual field defects.)
 1. Get the attention trace
     1. http://ilab.usc.edu/publications/doc/Tseng_etal13ideal.pdf
 [Image: Screen Shot 2022-03-02 at 12.24.40 PM.png][Image: Screen Shot 2022-03-02 at 3.42.08 PM.png]
