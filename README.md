@@ -34,13 +34,11 @@ We consider various saliency modes to assess atypical visual saliency for CVI. A
 * Edges - Orientation
 * Perceived Depth
 * Salient Objects
-* Model Gradients
+* Model Gradients (TBD)
 
 ## Citation
 
 * Rahul Sharma, PhD in Electrical and Computer Engineering
 * Kleanthis Avramidis, PhD Student in Computer Science
 
-University of Southern California
-
-Citation TBD
+University of Southern California, Citation TBD
