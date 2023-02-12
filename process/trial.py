@@ -1,6 +1,6 @@
 import os, glob, cv2
-from process.subject import Subject
-from process.saliency import SaliencyMap
+from process import Subject
+from saliency import SaliencyMap
 
 
 class ImageTrial:

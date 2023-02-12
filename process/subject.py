@@ -1,5 +1,13 @@
 import numpy as np
-from utils import fix_bounds
+
+def fix_bounds(data):
+    data = [d for d in data if (d[0] != 0) or (d[1] != 0)]
+    for i, (x, y) in enumerate(data):
+        x = 1279 if x >= 1280 else 0 if x < 0 else x
+        y = 719 if y >= 720 else 0 if y < 0 else y
+        data[i] = [int(x), int(y)]
+    return data
+
 
 class Subject:
     def __init__(self, root, subject_id):

@@ -5,15 +5,6 @@ from tslearn.metrics import dtw
 from process.subject import Subject
 
 
-def fix_bounds(data):
-    data = [d for d in data if (d[0] != 0) or (d[1] != 0)]
-    for i, (x, y) in enumerate(data):
-        x = 1279 if x >= 1280 else 0 if x < 0 else x
-        y = 719 if y >= 720 else 0 if y < 0 else y
-        data[i] = [int(x), int(y)]
-    return data
-
-
 def plot_traces(names, traces, outpath):
     t = list(range(len(names)))
     plt.figure(figsize=(10, 5))
