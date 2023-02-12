@@ -2,7 +2,16 @@ import matplotlib.pyplot as plt
 import numpy as np
 from tslearn.metrics import dtw
 
-from process.subject import Subject
+from process import Subject
+
+
+DATA_ROOT = "/home/kavra/Datasets/medical/cvi_eyetracking/asc_data_v1/"
+IMGS_ROOT = "trials/"
+SMAP_ROOT = "output/extra/saliency_maps/"
+
+TRIAL_LIST = [
+    ...
+]
 
 
 def plot_traces(names, traces, outpath):

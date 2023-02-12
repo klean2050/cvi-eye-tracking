@@ -38,8 +38,9 @@ We consider various saliency modes to assess atypical visual saliency for CVI. A
 
 ## Citation
 
-Rahul Sharma, PhD in Electrical and Computer Engineering
-Kleanthis Avramidis, PhD Student in Computer Science
+* Rahul Sharma, PhD in Electrical and Computer Engineering
+* Kleanthis Avramidis, PhD Student in Computer Science
 
 University of Southern California
+
 Citation TBD
