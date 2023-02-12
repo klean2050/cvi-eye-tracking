@@ -2,6 +2,7 @@ from .color import *
 from .depth import *
 from .object import *
 from .angle import *
+from .basic import *
 
 
 class SaliencyMap:
@@ -11,6 +12,10 @@ class SaliencyMap:
     def get_smap(self, trial):
         if self.smap_type == "intensity":
             return smap_intensity(trial)
+        elif self.smap_type == "rough":
+            return smap_rough(trial)
+        elif self.smap_type == "fine":
+            return smap_fine(trial)
         elif self.smap_type == "color":
             return smap_color(trial)
         elif self.smap_type == "rg":

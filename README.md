@@ -26,4 +26,20 @@ We selected 64 children with diagnosed CVI along with 12 controls of matching ag
 
 ### Visual Saliency Model
 
-TBD
+We consider various saliency modes to assess atypical visual saliency for CVI. Available modes:
+
+* Pixel Intensity
+* Spectral Residual
+* Color - Opponency
+* Edges - Orientation
+* Perceived Depth
+* Salient Objects
+* Model Gradients
+
+## Citation
+
+Rahul Sharma, PhD in Electrical and Computer Engineering
+Kleanthis Avramidis, PhD Student in Computer Science
+
+University of Southern California
+Citation TBD
