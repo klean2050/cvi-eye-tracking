@@ -13,7 +13,7 @@ git clone https://github.com/klean2050/cvi-eye-tracking
 cd cvi-eye-tracking && pip install -r requirements.txt
 ```
 
-We do not provide `.asc` files or image stimuli. If you have access to the data, modify the respective path parameters at `utils.py`. You can run a sample experiment by running:
+We do not provide `.asc` files or image stimuli. If you have access to the data, modify the respective path parameters at `utils.py`. You can run a sample experiment using the following command:
 
 ```
 python main.py
