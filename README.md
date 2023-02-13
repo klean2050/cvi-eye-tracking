@@ -36,6 +36,8 @@ We consider various saliency modes to assess atypical visual saliency for CVI. A
 * Salient Objects
 * Model Gradients (TBD)
 
+TBD: Consider saliency in images through text prompts (e.g., CLIP model)
+
 ## Citation
 
 * Rahul Sharma, PhD in Electrical and Computer Engineering
