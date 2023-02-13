@@ -1,35 +1,36 @@
 import os
-
+from scipy import stats
+from process import FixationAnalyzer, Subject
+from utils import DATA_ROOT
 
 if __name__ == "__main__":
-    root = "/home/kavra/Datasets/medical/cvi_eyetracking/asc_data_v1/"
+    root = DATA_ROOT
+    trial = "Freeviewingstillimage_1.jpg"
 
-    ids = [i for i in os.listdir(root) if i.endswith(".asc")]
+    ids = [i for i in os.listdir(DATA_ROOT) if i.endswith(".asc")]
     ctrl_ids = [i.split(".")[0] for i in ids if i.split("_")[0].startswith("2")]
     cvi_ids = [i.split(".")[0] for i in ids if i not in ctrl_ids]
     names = ctrl_ids + cvi_ids
 
-    trials_images_subset = [
-        "Freeviewingstillimage_1.jpg",
-        "Freeviewingstillimage_2.jpg",
-        "Freeviewingstillimage_4.jpg",
-        "Freeviewingstillimage_5.jpg",
-        "Freeviewingstillimage_7.jpg",
-        "Freeviewingstillimage_8.jpg",
-        "Freeviewingstillimage_9.jpg",
-        "Freeviewingstillimage_10.jpg",
-        "Freeviewingstillimage_10_cutout.tif",
-        "Moviestillimage_8.jpg",
-        "Moviestillimage_6.jpg",
-        "Freeviewingstillimage_50.jpg",
-        "Freeviewingstillimage_88_cutout.tif",
-    ]
-    trial, vel = "Freeviewingstillimage_1.jpg", False
+    # # # # # # # # # # #
+    # SAMPLE EXPERIMENT #
+    # # # # # # # # # # #
 
-    compare_trials = [
-        ["Freeviewingstillimage_36.jpg", "Freeviewingstillimage_36_cutout.tif"],
-        ["Freeviewingstillimage_28.jpg", "Freeviewingstillimage_28_cutout.tif"],
-        ["Freeviewingstillimage_93.jpg", "Freeviewingstillimage_93_cutout.tif"],
-        ["Freeviewingstillimage_36.jpg", "Freeviewingstillimage_36_cutout.tif"],
-        ["Freeviewingstillimage_10.jpg", "Freeviewingstillimage_10_cutout.tif"],
-    ]
+    durations_ctrl = []
+    for subject in ctrl_ids:
+        sub = Subject(DATA_ROOT, subject)
+        out = sub.extract_fixations(trial_name=trial)
+        fix_analyzer = FixationAnalyzer(DATA_ROOT, out)
+        dur = fix_analyzer.number_of_fixations()
+        durations_ctrl.append(dur)
+
+    durations_cvi = []
+    for subject in cvi_ids:
+        sub = Subject(DATA_ROOT, subject)
+        out = sub.extract_fixations(trial_name=trial)
+        fix_analyzer = FixationAnalyzer(DATA_ROOT, out)
+        dur = fix_analyzer.number_of_fixations()
+        durations_cvi.append(dur)
+
+    stat, p_value = stats.ttest_ind(durations_ctrl, durations_cvi)
+    print(p_value)
