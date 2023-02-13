@@ -1,0 +1,7 @@
+matplotlib==3.5.1
+numpy==1.21.5
+opencv_python_headless==4.6.0.66
+scipy==1.8.0
+torch==1.13.1
+transformers==4.23.1
+tslearn==0.5.2

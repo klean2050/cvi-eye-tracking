@@ -1,5 +1,24 @@
 # Visual Saliency in Pediatric CVI through Eye Tracking
 
+## Installation
+
+We recommend using a conda environment with ``Python >= 3.9`` :
+```
+conda create -n cvi python=3.9
+conda activate cvi
+```
+Clone the repository and install the dependencies:
+```
+git clone https://github.com/klean2050/cvi-eye-tracking
+cd cvi-eye-tracking && pip install -r requirements.txt
+```
+
+We do not provide `.asc` files or image stimuli. If you have access to the data, modify the respective path parameters at `utils.py`. You can run a sample experiment by running:
+
+```
+python main.py
+```
+
 ## Cortical Visual Impairment
 
 Cortical visual impairment (CVI) is a leading cause of visual impairment in developed and developing countries, yet the visual characteristics that are impacted are poorly defined, and no evidence-based treatment is available. CVI occurs in children with neurologic damage to visual pathways in the brain, rather than the eye. Common causes of CVI in children include prematurity with periventricular leukomalacia, hypoxic-ischemic encephalopathy, trauma, hydrocephalus, metabolic and genetic disorders, and seizures.

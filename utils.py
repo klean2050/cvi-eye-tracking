@@ -1,5 +1,5 @@
-import matplotlib.pyplot as plt
 import numpy as np
+import matplotlib.pyplot as plt
 from tslearn.metrics import dtw
 
 from process import Subject
@@ -13,6 +13,13 @@ TRIAL_LIST = [
     ...
 ]
 
+TO_COMPARE = [
+    ["Freeviewingstillimage_36.jpg", "Freeviewingstillimage_36_cutout.tif"],
+    ["Freeviewingstillimage_28.jpg", "Freeviewingstillimage_28_cutout.tif"],
+    ["Freeviewingstillimage_93.jpg", "Freeviewingstillimage_93_cutout.tif"],
+    ["Freeviewingstillimage_36.jpg", "Freeviewingstillimage_36_cutout.tif"],
+    ["Freeviewingstillimage_10.jpg", "Freeviewingstillimage_10_cutout.tif"],
+]
 
 def plot_traces(names, traces, outpath):
     t = list(range(len(names)))
