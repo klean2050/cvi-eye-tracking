@@ -1,6 +1,7 @@
 import os, glob, cv2
 from process import Subject
 from saliency import SaliencyMap
+from skimage import measure
 
 
 class ImageTrial:
@@ -25,6 +26,14 @@ class ImageTrial:
             smap = sal.get_smap(self.load_trial_img())
             cv2.imwrite(path, smap)
             return smap
+        
+    def complexity(self):
+        img = self.load_trial_img()
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        stats = measure.regionprops(img)
+        areas = [l.area for l in stats]
+        rp_tot = img.shape[0] * img.shape[1]
+        return sum(areas > (rp_tot/25000))
 
     def read_subjects(self, names, vel=False):
         data, frac = {}, {}
