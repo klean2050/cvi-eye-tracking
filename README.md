@@ -53,7 +53,7 @@ We consider various saliency modes to assess atypical visual saliency for CVI. A
 * Edges - Orientation
 * Perceived Depth
 * Salient Objects
-* Model Gradients (TBD)
+* DeepGaze IIE Maps
 
 TBD: Consider saliency in images through text prompts (e.g., CLIP model)
 

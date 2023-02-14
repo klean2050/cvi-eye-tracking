@@ -3,6 +3,7 @@ from .depth import *
 from .object import *
 from .angle import *
 from .basic import *
+from .deepg import *
 
 
 class SaliencyMap:
@@ -29,6 +30,8 @@ class SaliencyMap:
         elif self.smap_type == "depth":
             return smap_depth(trial)
         elif isinstance(self.smap_type, tuple):
-            return self.smap_object(trial)
+            return smap_object(trial)
+        elif self.smap_type == "deepgaze":
+            return smap_deepgaze(trial)
         else:
             return NotImplementedError
