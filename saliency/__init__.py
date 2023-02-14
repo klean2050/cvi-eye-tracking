@@ -33,5 +33,7 @@ class SaliencyMap:
             return smap_object(trial)
         elif self.smap_type == "deepgaze":
             return smap_deepgaze(trial)
+        elif self.smap_type == "center":
+            return smap_center(trial)
         else:
             return NotImplementedError
