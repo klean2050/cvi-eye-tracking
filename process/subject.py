@@ -1,5 +1,6 @@
 import numpy as np
 
+
 def fix_bounds(data):
     data = [d for d in data if (d[0] != 0) or (d[1] != 0)]
     for i, (x, y) in enumerate(data):
@@ -137,8 +138,7 @@ class Subject:
         if vel:
             velocity = [[0.0, 0.0]]
             velocity += [
-                data_fusion[i + 1] - data_fusion[i]
-                for i in range(len(data_fusion) - 1)
+                data_fusion[i + 1] - data_fusion[i] for i in range(len(data_fusion) - 1)
             ]
             return np.array(velocity), fraction
         else:
@@ -206,12 +206,14 @@ class Subject:
             ]
 
             fused_saccade, fraction = self.__fuse_eyes(saccade_raw)
-            saccades_all.append({
-                "data": fused_saccade,
-                "fraction": fraction,
-                "latency": latency,
-                "duration": duration
-            })
+            saccades_all.append(
+                {
+                    "data": fix_bounds(fused_saccade),
+                    "fraction": fraction,
+                    "latency": latency,
+                    "duration": duration,
+                }
+            )
 
         saccades_all.sort(key=lambda x: x["latency"])
         return saccades_all
@@ -277,25 +279,19 @@ class Subject:
             ]
 
             fused_fixation, fraction = self.__fuse_eyes(fixation_raw)
-            fixations_all.append({
-                "data": fused_fixation,
-                "fraction": fraction,
-                "latency": latency,
-                "duration": duration
-            })
+            fixations_all.append(
+                {
+                    "data": fix_bounds(fused_fixation),
+                    "fraction": fraction,
+                    "latency": latency,
+                    "duration": duration,
+                }
+            )
 
         fixations_all.sort(key=lambda x: x["latency"])
         return fixations_all
-    
+
     def extract_trace(self, trial_name, smap):
         data = self.extract_data(trial_name)
         data = fix_bounds([d["data"] for d in data])
         return [smap[d[1], d[0]] for d in data]
-
-
-if __name__ == "__main__":
-    root = "/home/kavra/Datasets/medical/cvi_eyetracking/asc_data_v1/"
-    trial, subject = "Freeviewingstillimage_1.jpg", "1007_1"
-    sub = Subject(root, subject)
-    print(sub.extract_fixations(trial))
-    
