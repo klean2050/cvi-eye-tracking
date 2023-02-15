@@ -1,5 +1,6 @@
 import numpy as np, cv2
 
+
 def smap_red(img):
     # convert to HSV color space
     hsv = cv2.cvtColor(img, cv2.COLOR_RGB2HSV)
@@ -15,6 +16,7 @@ def smap_red(img):
     mask = mask1 + mask2
     return np.uint8(mask / 255)
 
+
 def smap_green(img):
     # convert to HSV color space
     hsv = cv2.cvtColor(img, cv2.COLOR_RGB2HSV)
@@ -24,6 +26,7 @@ def smap_green(img):
     mask = cv2.inRange(hsv, lower_green, upper_green)
     # return an integer mask
     return np.uint8(mask / 255)
+
 
 def smap_blue(img):
     # convert to HSV color space
@@ -35,6 +38,7 @@ def smap_blue(img):
     # return an integer mask
     return np.uint8(mask / 255)
 
+
 def smap_yellow(img):
     # convert to HSV color space
     hsv = cv2.cvtColor(img, cv2.COLOR_RGB2HSV)
@@ -45,17 +49,20 @@ def smap_yellow(img):
     # return an integer mask
     return np.uint8(mask / 255)
 
+
 def smap_rg_opponency(img):
     r = smap_red(img)
     g = smap_green(img)
     saliency_map = np.abs(r - g)
     return np.uint8(saliency_map)
 
+
 def smap_by_opponency(img):
     b = smap_blue(img)
     y = smap_yellow(img)
     saliency_map = np.abs(b - y)
     return np.uint8(saliency_map)
+
 
 def smap_color(img):
     r = smap_red(img)
@@ -65,6 +72,7 @@ def smap_color(img):
     saliency_map = r + g + b + y
     return np.uint8(saliency_map)
 
+
 def smap_intensity(img):
-    smap =  cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+    smap = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
     return np.uint8(smap / 255)

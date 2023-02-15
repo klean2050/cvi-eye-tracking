@@ -24,7 +24,7 @@ class SaliencyMap:
         elif self.smap_type == "by":
             return smap_by_opponency(trial)
         elif self.smap_type == "orientation":
-            return self.smap_orientation(trial)
+            return smap_orientation(trial)
         elif isinstance(self.smap_type, int):
             return smap_angle(trial, self.smap_type)
         elif self.smap_type == "depth":
