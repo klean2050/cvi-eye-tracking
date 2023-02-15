@@ -7,33 +7,34 @@ from skimage import measure
 class ImageTrial:
     def __init__(self, root, trial_name, smap_dir):
         self.root = root
+        self.path = glob.glob(f"trials/*/*{trial_name}")[0]
         self.trial_name = trial_name
         self.smap_dir = smap_dir
-        self.ids = glob.glob(os.path.join(self.root, "*.asc"))
+        self.ids = glob.glob(os.path.join(root, "*.asc"))
         self.ids = [os.path.basename(d)[:-4] for d in self.ids]
 
     def load_trial_img(self):
-        img = cv2.imread(os.path.join(self.root, self.trial_name))
-        return img
+        img = cv2.imread(self.path)
+        return cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
     def load_saliency_map(self, smap_type):
-        filename = f"{self.trial_name[:-4]}_{smap_type}.png"
-        path = os.path.join(self.root, self.smap_dir, filename)
-        if os.exists(path):
+        filename = f"{self.trial_name[:-4]}_{smap_type}.jpg"
+        path = os.path.join(self.smap_dir, filename)
+        if os.path.exists(path):
             return cv2.imread(path)
         else:
             sal = SaliencyMap(smap_type)
             smap = sal.get_smap(self.load_trial_img())
-            cv2.imwrite(path, smap)
+            cv2.imwrite(path, smap * 255)
             return smap
-        
+
     def complexity(self):
         img = self.load_trial_img()
         img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         stats = measure.regionprops(img)
         areas = [l.area for l in stats]
         rp_tot = img.shape[0] * img.shape[1]
-        return sum(areas > (rp_tot/25000))
+        return sum(areas > (rp_tot / 25000))
 
     def read_subjects(self, names, vel=False):
         data, frac = {}, {}

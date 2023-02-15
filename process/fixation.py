@@ -1,6 +1,7 @@
 import numpy as np, cv2, glob
 from scipy import stats
 
+
 def fix_bounds(data):
     data = [d for d in data if (d[0] != 0) or (d[1] != 0)]
     for i, (x, y) in enumerate(data):
@@ -8,6 +9,7 @@ def fix_bounds(data):
         y = 719 if y >= 720 else 0 if y < 0 else y
         data[i] = [int(x), int(y)]
     return data
+
 
 def gkern(kernlen=21, nsig=3):
     """
@@ -82,7 +84,11 @@ class FixationAnalyzer:
         return len(self.fixations)
 
     def duration_of_fixations(self):
-        return sum([f["duration"] for f in self.fixations])
+        durs = [f["duration"] for f in self.fixations]
+        if durs:
+            return np.mean(durs), np.std(durs)
+        else:
+            return 0, 0
 
     def latency_first_fixation(self):
         if len(self.fixations):

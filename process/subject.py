@@ -32,7 +32,10 @@ class Subject:
             if trial_active:
                 if "End Trial {}".format(trial_name) in line:
                     break
-                elif numeric and line[0].isdigit():
+                elif "Start Trial {}".format(trial_name) in line:
+                    # just consider it as End Trial
+                    break
+                elif line[0].isdigit():
                     trial.append(line)
                 elif not numeric:
                     trial.append(line)
@@ -53,6 +56,9 @@ class Subject:
         for line in self.trial:
             if fixation_active:
                 if f"EFIX {this_eye}" in line:
+                    fixations.append(current_fixation)
+                    fixation_active = False
+                elif f"SFIX {this_eye}" in line:
                     fixations.append(current_fixation)
                     fixation_active = False
                 else:
@@ -216,7 +222,7 @@ class Subject:
         Function: loads the trial and finds common L, R fixations
         Returns: list of fixations, each a 4-item dictionary
         """
-        self.trial = self.__trial_list(trial_name)
+        self.trial = self.__trial_list(trial_name, numeric=False)
         numeric = self.__trial_list(trial_name, numeric=True)
         if len(self.trial) <= 2:
             return []
