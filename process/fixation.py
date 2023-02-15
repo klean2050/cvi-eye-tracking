@@ -73,12 +73,13 @@ class FixationAnalyzer:
         data = [f["data"] for f in self.fixations]
         for fixation in data:
             fixation = fix_bounds(fixation)
-            saliency = [smap[x, y] for x, y in fixation]
+            saliency = [smap[int(x), int(y)] for x, y in fixation]
             trace.extend(saliency)
         return trace
 
     def average_saliency(self, smap):
-        return np.mean(self.fixation_trace(smap))
+        trace = self.fixation_trace(smap)
+        return np.mean(trace) if trace else 0
 
     def number_of_fixations(self):
         return len(self.fixations)
@@ -100,7 +101,8 @@ class FixationAnalyzer:
     def saliency_first_fixation(self, smap):
         if len(self.fixations):
             this_fixation = self.fixations[0]
-            saliency = [smap[x, y] for x, y in this_fixation["data"]]
+            saliency = [smap[int(x), int(y)] for x, y in this_fixation["data"]]
+
             return np.mean(saliency)
         else:
             return 0
@@ -117,7 +119,7 @@ class FixationAnalyzer:
         if len(self.fixations):
             self.fixations.sort(key=lambda x: x["duration"])
             this_fixation = self.fixations[-1]
-            saliency = [smap[x, y] for x, y in this_fixation["data"]]
+            saliency = [smap[int(x), int(y)] for x, y in this_fixation["data"]]
             return np.mean(saliency)
         else:
             return 0
@@ -125,7 +127,7 @@ class FixationAnalyzer:
     def latency_maxsal_fixation(self, smap):
         saliencies = []
         for fixation in self.fixations:
-            saliency = [smap[x, y] for x, y in fixation["data"]]
+            saliency = [smap[int(x), int(y)] for x, y in fixation["data"]]
             saliencies.append((fixation["latency"], np.mean(saliency)))
 
         if len(saliencies):
@@ -137,11 +139,31 @@ class FixationAnalyzer:
     def saliency_maxsal_fixation(self, smap):
         saliencies = []
         for fixation in self.fixations:
-            saliency = [smap[x, y] for x, y in fixation["data"]]
+            saliency = [smap[int(x), int(y)] for x, y in fixation["data"]]
             saliencies.append(np.mean(saliency))
 
         if len(saliencies):
             saliencies.sort()
             return saliencies[-1]
+        else:
+            return 0
+        
+    def latency_overtime(self):
+        latencies = [f["latency"] for f in self.fixations]
+        t = np.arange(len(latencies))
+        if len(latencies) > 1:
+            return stats.linregress(t, latencies).slope
+        else:
+            return 0
+
+    def saliency_overtime(self, smap):
+        saliencies = []
+        for fixation in self.fixations:
+            saliency = [smap[int(x), int(y)] for x, y in fixation["data"]]
+            saliencies.append(np.mean(saliency))
+
+        t = np.arange(len(saliencies))
+        if len(saliencies) > 1:
+            return stats.linregress(t, saliencies).slope
         else:
             return 0
