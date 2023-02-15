@@ -14,7 +14,7 @@ def smap_red(img):
     mask2 = cv2.inRange(hsv, lower_red, upper_red)
     # return an integer mask
     mask = mask1 + mask2
-    return np.uint8(mask / 255)
+    return np.uint8(mask)
 
 
 def smap_green(img):
@@ -25,7 +25,7 @@ def smap_green(img):
     upper_green = np.array([90, 255, 255])
     mask = cv2.inRange(hsv, lower_green, upper_green)
     # return an integer mask
-    return np.uint8(mask / 255)
+    return np.uint8(mask)
 
 
 def smap_blue(img):
@@ -36,7 +36,7 @@ def smap_blue(img):
     upper_blue = np.array([130, 255, 255])
     mask = cv2.inRange(hsv, lower_blue, upper_blue)
     # return an integer mask
-    return np.uint8(mask / 255)
+    return np.uint8(mask)
 
 
 def smap_yellow(img):
@@ -47,7 +47,7 @@ def smap_yellow(img):
     upper_yellow = np.array([26, 255, 255])
     mask = cv2.inRange(hsv, lower_yellow, upper_yellow)
     # return an integer mask
-    return np.uint8(mask / 255)
+    return np.uint8(mask)
 
 
 def smap_rg_opponency(img):
@@ -74,5 +74,5 @@ def smap_color(img):
 
 
 def smap_intensity(img):
-    smap = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
-    return np.uint8(smap / 255)
+    smap = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    return np.uint8(smap)

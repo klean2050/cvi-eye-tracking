@@ -7,7 +7,7 @@ from skimage import measure
 class ImageTrial:
     def __init__(self, root, trial_name, smap_dir):
         self.root = root
-        self.path = glob.glob(f"trials/*/*{trial_name}")[0]
+        self.path = glob.glob(f"trials/*/*{trial_name}*")[0]
         self.trial_name = trial_name
         self.smap_dir = smap_dir
         self.ids = glob.glob(os.path.join(root, "*.asc"))
@@ -18,14 +18,16 @@ class ImageTrial:
         return cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
     def load_saliency_map(self, smap_type):
-        filename = f"{self.trial_name[:-4]}_{smap_type}.jpg"
-        path = os.path.join(self.smap_dir, filename)
+        image_name = self.trial_name.strip(".jpg")
+        filename = f"{image_name}_{smap_type}.jpg"
+        path = os.path.join(self.smap_dir, image_name, filename)
         if os.path.exists(path):
             return cv2.imread(path)
         else:
+            os.makedirs(os.path.join(self.smap_dir, image_name), exist_ok=True)
             sal = SaliencyMap(smap_type)
             smap = sal.get_smap(self.load_trial_img())
-            cv2.imwrite(path, smap * 255)
+            cv2.imwrite(path, smap)
             return smap
 
     def complexity(self):
@@ -57,6 +59,6 @@ class ImageTrial:
         traces = {}
         for subject in names:
             sub = Subject(subject)
-            this = sub.extract_trace(self.trial_name)
+            this = sub.extract_trace(self.trial_name, smap)
             traces[subject] = this
         return traces
