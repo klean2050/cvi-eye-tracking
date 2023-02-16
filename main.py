@@ -10,14 +10,18 @@ if __name__ == "__main__":
     cvi_ids = [i.split(".")[0] for i in ids if i not in ctrl_ids]
     names = ctrl_ids + cvi_ids
 
-    # # # # # # # # # # #
-    # SAMPLE EXPERIMENT #
-    # # # # # # # # # # #
+    # # # # # # # #
+    # EXPERIMENTS #
+    # # # # # # # #
+    print("Experiment: SAMPLE\n")
 
     p_values = []
     for trial in TRIAL_LIST:
         this_trial = ImageTrial(DATA_ROOT, trial, "smaps")
-        a = this_trial.load_saliency_map(0).T[0]
+        a = this_trial.load_saliency_map("color")
+
+        if "visual" in trial:
+            continue
 
         features_ctrl = []
         for subject in ctrl_ids:

@@ -2,6 +2,7 @@ import os, glob, cv2
 from process import Subject
 from saliency import SaliencyMap
 from skimage import measure
+import matplotlib.pyplot as plt
 
 
 class ImageTrial:
@@ -22,7 +23,7 @@ class ImageTrial:
         filename = f"{image_name}_{smap_type}.jpg"
         path = os.path.join(self.smap_dir, image_name, filename)
         if os.path.exists(path):
-            return cv2.imread(path)
+            return plt.imread(path).T
         else:
             os.makedirs(os.path.join(self.smap_dir, image_name), exist_ok=True)
             sal = SaliencyMap(smap_type)
