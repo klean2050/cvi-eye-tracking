@@ -35,13 +35,11 @@ class SaliencyMap:
             smap = smap_angle(trial, self.smap_type)
         elif self.smap_type == "depth":
             smap = smap_depth(trial)
-        elif isinstance(self.smap_type, tuple):
-            smap = smap_object(trial)
         elif self.smap_type == "deepgaze":
             smap = smap_deepgaze(trial)
         elif self.smap_type == "center":
             smap = smap_center(trial)
         else:
-            return NotImplementedError
+            smap = smap_object(trial, self.smap_type)
 
         return self.normalize(smap) * 255
