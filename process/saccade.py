@@ -10,7 +10,11 @@ class SaccadeAnalyzer:
         return len(self.saccades)
 
     def duration_of_saccades(self):
-        return sum([s["duration"] for s in self.saccades])
+        durs = [f["duration"] for f in self.saccades]
+        if durs:
+            return np.mean(durs), np.std(durs)
+        else:
+            return 0, 0
 
     def velocity_of_saccades(self):
         velocities = []

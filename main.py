@@ -18,28 +18,28 @@ if __name__ == "__main__":
     p_values = []
     for trial in TRIAL_LIST:
         this_trial = ImageTrial(DATA_ROOT, trial, "smaps")
-        a = this_trial.load_saliency_map("color")
+        a = this_trial.load_saliency_map("face")
 
-        if "visual" in trial:
-            continue
+        # if "visual" in trial:
+        #    continue
 
         features_ctrl = []
         for subject in ctrl_ids:
             sub = Subject(DATA_ROOT, subject)
-            out = sub.extract_fixations(trial_name=trial)
-            fix_analyzer = FixationAnalyzer(DATA_ROOT, out)
-            feat = fix_analyzer.average_saliency(a)
+            out = sub.extract_saccades(trial_name=trial)
+            fix_analyzer = SaccadeAnalyzer(DATA_ROOT, out)
+            feat = fix_analyzer.number_of_saccades()
             features_ctrl.append(feat)
 
         features_cvi = []
         for subject in cvi_ids:
             sub = Subject(DATA_ROOT, subject)
-            out = sub.extract_fixations(trial_name=trial)
-            fix_analyzer = FixationAnalyzer(DATA_ROOT, out)
-            feat = fix_analyzer.average_saliency(a)
+            out = sub.extract_saccades(trial_name=trial)
+            fix_analyzer = SaccadeAnalyzer(DATA_ROOT, out)
+            feat = fix_analyzer.number_of_saccades()
             features_cvi.append(feat)
 
-        stat, p_value = stats.ttest_ind(features_ctrl, features_cvi, equal_var=False)
+        stat, p_value = stats.mannwhitneyu(features_ctrl, features_cvi)
         significance = (
             "***"
             if p_value < 0.001
