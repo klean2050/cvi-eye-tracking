@@ -23,13 +23,13 @@ class ImageTrial:
         filename = f"{image_name}_{smap_type}.jpg"
         path = os.path.join(self.smap_dir, image_name, filename)
         if os.path.exists(path):
-            return plt.imread(path).T
+            smap = plt.imread(path)
         else:
             os.makedirs(os.path.join(self.smap_dir, image_name), exist_ok=True)
             sal = SaliencyMap(smap_type)
             smap = sal.get_smap(self.load_trial_img())
             cv2.imwrite(path, smap)
-            return smap
+        return smap.T
 
     def complexity(self):
         img = self.load_trial_img()

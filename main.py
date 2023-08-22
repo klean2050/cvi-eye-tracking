@@ -5,38 +5,34 @@ from utils import DATA_ROOT, TRIAL_LIST
 
 if __name__ == "__main__":
 
+    new_res = True if "new_res" in DATA_ROOT else False
     ids = [i for i in os.listdir(DATA_ROOT) if i.endswith(".asc")]
     ctrl_ids = [i.split(".")[0] for i in ids if i.split("_")[0].startswith("2")]
     cvi_ids = [i.split(".")[0] for i in ids if i not in ctrl_ids]
-    names = ctrl_ids + cvi_ids
 
     # # # # # # # #
     # EXPERIMENTS #
     # # # # # # # #
-    print("Experiment: SAMPLE\n")
 
     p_values = []
     for trial in TRIAL_LIST:
         this_trial = ImageTrial(DATA_ROOT, trial, "smaps")
-        a = this_trial.load_saliency_map("face")
-
-        # if "visual" in trial:
-        #    continue
+        smap = this_trial.load_saliency_map("red")
 
         features_ctrl = []
         for subject in ctrl_ids:
-            sub = Subject(DATA_ROOT, subject)
-            out = sub.extract_saccades(trial_name=trial)
-            fix_analyzer = SaccadeAnalyzer(DATA_ROOT, out)
-            feat = fix_analyzer.number_of_saccades()
+            sub = Subject(DATA_ROOT, subject, new_res=new_res)
+            out = sub.extract_fixations(trial_name=trial)
+            fix_analyzer = FixationAnalyzer(DATA_ROOT, out, new_res=new_res)
+            feat = fix_analyzer.average_saliency(smap)
             features_ctrl.append(feat)
 
         features_cvi = []
         for subject in cvi_ids:
-            sub = Subject(DATA_ROOT, subject)
-            out = sub.extract_saccades(trial_name=trial)
-            fix_analyzer = SaccadeAnalyzer(DATA_ROOT, out)
-            feat = fix_analyzer.number_of_saccades()
+            sub = Subject(DATA_ROOT, subject, new_res=new_res)
+            out = sub.extract_fixations(trial_name=trial)
+            fix_analyzer = FixationAnalyzer(DATA_ROOT, out, new_res=new_res)
+            feat = fix_analyzer.average_saliency(smap)
             features_cvi.append(feat)
 
         stat, p_value = stats.mannwhitneyu(features_ctrl, features_cvi)
@@ -49,7 +45,7 @@ if __name__ == "__main__":
             if p_value < 0.05
             else ""
         )
-        print(trial, p_value, significance)
+        print(trial, np.round(p_value, 4), significance)
         p_values.append(p_value)
 
     finalp = stats.combine_pvalues(p_values)[1]

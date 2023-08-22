@@ -2,11 +2,16 @@ import numpy as np, cv2, glob
 from scipy import stats
 
 
-def fix_bounds(data):
+def fix_bounds(data, new_res=False):
     data = [d for d in data if (d[0] != 0) or (d[1] != 0)]
     for i, (x, y) in enumerate(data):
-        x = 1279 if x >= 1280 else 0 if x < 0 else x
-        y = 719 if y >= 720 else 0 if y < 0 else y
+        if new_res:
+            # up left corner is (320, 240)
+            x = 1279 if x >= 1600 else 0 if x < 320 else x - 320
+            y = 719 if y >= 960 else 0 if y < 240 else y - 240
+        else:
+            x = 1279 if x >= 1280 else 0 if x < 0 else x
+            y = 719 if y >= 720 else 0 if y < 0 else y
         data[i] = [int(x), int(y)]
     return data
 
@@ -22,8 +27,9 @@ def gkern(kernlen=21, nsig=3):
 
 
 class FixationAnalyzer:
-    def __init__(self, root, fixations):
+    def __init__(self, root, fixations, new_res=False):
         self.root = root
+        self.new_res = new_res
         self.fixations = fixations
 
     def fixation_map(self, trial):
@@ -72,7 +78,7 @@ class FixationAnalyzer:
         trace = []
         data = [f["data"] for f in self.fixations]
         for fixation in data:
-            fixation = fix_bounds(fixation)
+            fixation = fix_bounds(fixation, new_res=self.new_res)
             saliency = [smap[int(x), int(y)] for x, y in fixation]
             trace.extend(saliency)
         return trace

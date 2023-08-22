@@ -1,22 +1,28 @@
 import numpy as np
 
 
-def fix_bounds(data):
+def fix_bounds(data, new_res=False):
     data = [d for d in data if (d[0] != 0) or (d[1] != 0)]
     for i, (x, y) in enumerate(data):
-        x = 1279 if x >= 1280 else 0 if x < 0 else x
-        y = 719 if y >= 720 else 0 if y < 0 else y
+        if new_res:
+            # up left corner is (320, 240)
+            x = 1279 if x >= 1600 else 0 if x < 320 else x - 320
+            y = 719 if y >= 960 else 0 if y < 240 else y - 240
+        else:
+            x = 1279 if x >= 1280 else 0 if x < 0 else x
+            y = 719 if y >= 720 else 0 if y < 0 else y
         data[i] = [int(x), int(y)]
     return data
 
 
 class Subject:
-    def __init__(self, root, subject_id):
+    def __init__(self, root, subject_id, new_res=False):
         """
         Input: data path (str) and subject id (str)
         Function: locates and loads eye-tracking files
         Returns: <Subject> object
         """
+        self.new_res = new_res
         self.id = subject_id
         self.asc_file = root + self.id + ".asc"
         with open(self.asc_file, "r") as f:
@@ -208,7 +214,7 @@ class Subject:
             fused_saccade, fraction = self.__fuse_eyes(saccade_raw)
             saccades_all.append(
                 {
-                    "data": fix_bounds(fused_saccade),
+                    "data": fix_bounds(fused_saccade, self.new_res),
                     "fraction": fraction,
                     "latency": latency,
                     "duration": duration,
@@ -281,7 +287,7 @@ class Subject:
             fused_fixation, fraction = self.__fuse_eyes(fixation_raw)
             fixations_all.append(
                 {
-                    "data": fix_bounds(fused_fixation),
+                    "data": fix_bounds(fused_fixation, self.new_res),
                     "fraction": fraction,
                     "latency": latency,
                     "duration": duration,
@@ -293,5 +299,5 @@ class Subject:
 
     def extract_trace(self, trial_name, smap):
         data = self.extract_data(trial_name)
-        data = fix_bounds([d["data"] for d in data])
+        data = fix_bounds([d["data"] for d in data], self.new_res)
         return [smap[d[1], d[0]] for d in data]
