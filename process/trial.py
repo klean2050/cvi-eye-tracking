@@ -1,4 +1,4 @@
-import os, glob, cv2
+import os, glob, cv2, numpy as np
 from process import Subject
 from saliency import SaliencyMap
 from skimage import measure
@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 class ImageTrial:
     def __init__(self, root, trial_name, smap_dir):
         self.root = root
+        self.new_res = True if "new_res" in root else False
         self.path = glob.glob(f"trials/*/*{trial_name}*")[0]
         self.trial_name = trial_name
         self.smap_dir = smap_dir
@@ -22,6 +23,7 @@ class ImageTrial:
         image_name = self.trial_name.strip(".jpg")
         filename = f"{image_name}_{smap_type}.jpg"
         path = os.path.join(self.smap_dir, image_name, filename)
+
         if os.path.exists(path):
             smap = plt.imread(path)
         else:
@@ -29,6 +31,9 @@ class ImageTrial:
             sal = SaliencyMap(smap_type)
             smap = sal.get_smap(self.load_trial_img())
             cv2.imwrite(path, smap)
+
+        if self.new_res:
+            smap = np.pad(smap, ((240, 240), (320, 320)), 'constant')
         return smap.T
 
     def complexity(self):

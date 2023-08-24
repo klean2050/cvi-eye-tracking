@@ -5,24 +5,24 @@ def fix_bounds(data, new_res=False):
     data = [d for d in data if (d[0] != 0) or (d[1] != 0)]
     for i, (x, y) in enumerate(data):
         if new_res:
-            # up left corner is (320, 240)
-            x = 1279 if x >= 1600 else 0 if x < 320 else x - 320
-            y = 719 if y >= 960 else 0 if y < 240 else y - 240
+            # up left corner is (320, 240), total is (1920, 1200)
+            x = 1919 if x >= 1920 else 0 if x < 0 else x
+            y = 1199 if y >= 1200 else 0 if y < 0 else y
         else:
             x = 1279 if x >= 1280 else 0 if x < 0 else x
             y = 719 if y >= 720 else 0 if y < 0 else y
         data[i] = [int(x), int(y)]
-    return data
+    return np.array(data)
 
 
 class Subject:
-    def __init__(self, root, subject_id, new_res=False):
+    def __init__(self, root, subject_id):
         """
         Input: data path (str) and subject id (str)
         Function: locates and loads eye-tracking files
         Returns: <Subject> object
         """
-        self.new_res = new_res
+        self.new_res = True if "new_res" in root else False
         self.id = subject_id
         self.asc_file = root + self.id + ".asc"
         with open(self.asc_file, "r") as f:
@@ -67,7 +67,8 @@ class Subject:
                     fixation_active = False
                 elif f"SFIX {this_eye}" in line:
                     fixations.append(current_fixation)
-                    fixation_active = False
+                    fixation_active = True
+                    current_fixation = []
                 else:
                     if line[0].isdigit():
                         current_fixation.append(line)
@@ -111,7 +112,7 @@ class Subject:
         for line in array:
             l = line.split("\t")
             row = [l[1], l[2], l[4], l[5]]
-            row = [0.0 if set(r.strip()) == {"."} else float(r) for r in row]
+            row = [0.0 if r.strip().endswith(".") else float(r) for r in row]
             out.append(row)
 
         out = np.array(out)
@@ -127,8 +128,11 @@ class Subject:
                 fused_out.append([(xl + xr) / 2, (yl + yr) / 2])
 
         fused_out = np.array(fused_out)
-        fraction = 1 - np.sum((fused_out[:, 0] == 0) & (fused_out[:, 1] == 0))
-        fraction /= len(fused_out)
+        if len(fused_out.shape) > 1:
+            fraction = 1 - np.sum((fused_out[:, 0] == 0) & (fused_out[:, 1] == 0))
+            fraction /= len(fused_out)
+        else:
+            fraction = 0
 
         return fused_out, fraction
 
@@ -140,6 +144,7 @@ class Subject:
         """
         self.trial = self.__trial_list(trial_name, numeric=True)
         data_fusion, fraction = self.__fuse_eyes(self.trial)
+        data_fusion = fix_bounds(data_fusion, self.new_res)
 
         if vel:
             velocity = [[0.0, 0.0]]
@@ -240,59 +245,92 @@ class Subject:
         fixations_r = self.__fixation_list(left=False)
         self.fixations = [fixations_l, fixations_r]
 
-        # compute the intersection between fixations
-        if len(fixations_r) <= len(fixations_l):
-            primary_fixations = fixations_r
-            secondary_fixations = fixations_l
-        else:
-            primary_fixations = fixations_l
-            secondary_fixations = fixations_r
-
-        intersections = []
-        for i, pri_fix in enumerate(primary_fixations):
-            pri_fix_times = [d.split("\t")[0] for d in pri_fix]
-            pri_fix_times = set(pri_fix_times)
-
-            for j, sec_fix in enumerate(secondary_fixations):
-                sec_fix_times = [d.split("\t")[0] for d in sec_fix]
-                sec_fix_times = set(sec_fix_times)
-
-                intersections.append(
-                    [
-                        i,
-                        j,
-                        len(list(pri_fix_times.intersection(sec_fix_times))),
-                    ]
-                )
-        intersections.sort(key=lambda x: x[-1], reverse=True)
-
-        fixation_idxes = intersections[: len(primary_fixations)]
         fixations_all = []
-        for idx in fixation_idxes:
-            a = [int(d.split("\t")[0]) for d in primary_fixations[idx[0]]]
-            b = [int(d.split("\t")[0]) for d in secondary_fixations[idx[1]]]
-            time_stamps = list(set(a).intersection(set(b)))
-            if len(time_stamps) < 10:
-                break
+        # no fixations in this trial
+        if len(fixations_l) == 0 and len(fixations_r) == 0:
+            return []
+        # only right eye fixations
+        elif len(fixations_l) == 0:
+            for i, fix in enumerate(fixations_r):
+                trial_start_time = int(numeric[0].split("\t")[0])
+                latency = int(fix[0].split("\t")[0]) - trial_start_time
+                duration = int(fix[-1].split("\t")[0]) - int(fix[0].split("\t")[0])
+                fused_fixation, fraction = self.__fuse_eyes(fix, which="R")
+                fixations_all.append(
+                    {
+                        "data": fix_bounds(fused_fixation, self.new_res),
+                        "fraction": 1,
+                        "latency": latency,
+                        "duration": duration,
+                    }
+                )
+        # only left eye fixations
+        elif len(fixations_r) == 0:
+            for i, fix in enumerate(fixations_l):
+                trial_start_time = int(numeric[0].split("\t")[0])
+                latency = int(fix[0].split("\t")[0]) - trial_start_time
+                duration = int(fix[-1].split("\t")[0]) - int(fix[0].split("\t")[0])
+                fused_fixation, fraction = self.__fuse_eyes(fix, which="L")
+                fixations_all.append(
+                    {
+                        "data": fix_bounds(fused_fixation, self.new_res),
+                        "fraction": 1,
+                        "latency": latency,
+                        "duration": duration,
+                    }
+                )
+        # compute the intersection between fixations
+        else:
+            if len(fixations_r) <= len(fixations_l):
+                primary_fixations = fixations_r
+                secondary_fixations = fixations_l
+            else:
+                primary_fixations = fixations_l
+                secondary_fixations = fixations_r
 
-            trial_start_time = int(numeric[0].split("\t")[0])
-            latency = np.min(time_stamps) - trial_start_time
-            duration = np.max(time_stamps) - np.min(time_stamps)
-            fixation_raw = [
-                d
-                for d in primary_fixations[idx[0]]
-                if int(d.split("\t")[0]) in time_stamps
-            ]
+            intersections = []
+            for i, pri_fix in enumerate(primary_fixations):
+                pri_fix_times = [d.split("\t")[0] for d in pri_fix]
+                pri_fix_times = set(pri_fix_times)
 
-            fused_fixation, fraction = self.__fuse_eyes(fixation_raw)
-            fixations_all.append(
-                {
-                    "data": fix_bounds(fused_fixation, self.new_res),
-                    "fraction": fraction,
-                    "latency": latency,
-                    "duration": duration,
-                }
-            )
+                for j, sec_fix in enumerate(secondary_fixations):
+                    sec_fix_times = [d.split("\t")[0] for d in sec_fix]
+                    sec_fix_times = set(sec_fix_times)
+
+                    intersections.append(
+                        [
+                            i,
+                            j,
+                            len(list(pri_fix_times.intersection(sec_fix_times))),
+                        ]
+                    )
+            intersections.sort(key=lambda x: x[-1], reverse=True)
+
+            fixation_idxes = intersections[: len(primary_fixations)]
+            for idx in fixation_idxes:
+                a = [int(d.split("\t")[0]) for d in primary_fixations[idx[0]]]
+                b = [int(d.split("\t")[0]) for d in secondary_fixations[idx[1]]]
+                time_stamps = list(set(a).intersection(set(b)))
+                if len(time_stamps) < 10:
+                    break
+
+                trial_start_time = int(numeric[0].split("\t")[0])
+                latency = np.min(time_stamps) - trial_start_time
+                duration = np.max(time_stamps) - np.min(time_stamps)
+                fixation_raw = [
+                    d
+                    for d in primary_fixations[idx[0]]
+                    if int(d.split("\t")[0]) in time_stamps
+                ]
+                fused_fixation, fraction = self.__fuse_eyes(fixation_raw)
+                fixations_all.append(
+                    {
+                        "data": fix_bounds(fused_fixation, self.new_res),
+                        "fraction": fraction,
+                        "latency": latency,
+                        "duration": duration,
+                    }
+                )
 
         fixations_all.sort(key=lambda x: x["latency"])
         return fixations_all

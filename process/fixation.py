@@ -6,14 +6,14 @@ def fix_bounds(data, new_res=False):
     data = [d for d in data if (d[0] != 0) or (d[1] != 0)]
     for i, (x, y) in enumerate(data):
         if new_res:
-            # up left corner is (320, 240)
-            x = 1279 if x >= 1600 else 0 if x < 320 else x - 320
-            y = 719 if y >= 960 else 0 if y < 240 else y - 240
+            # up left corner is (320, 240), total is (1920, 1200)
+            x = 1919 if x >= 1920 else 0 if x < 0 else x
+            y = 1199 if y >= 1200 else 0 if y < 0 else y
         else:
             x = 1279 if x >= 1280 else 0 if x < 0 else x
             y = 719 if y >= 720 else 0 if y < 0 else y
         data[i] = [int(x), int(y)]
-    return data
+    return np.array(data)
 
 
 def gkern(kernlen=21, nsig=3):
@@ -27,9 +27,9 @@ def gkern(kernlen=21, nsig=3):
 
 
 class FixationAnalyzer:
-    def __init__(self, root, fixations, new_res=False):
+    def __init__(self, root, fixations):
         self.root = root
-        self.new_res = new_res
+        self.new_res = True if "new_res" in root else False
         self.fixations = fixations
 
     def fixation_map(self, trial):

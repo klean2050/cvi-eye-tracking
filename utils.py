@@ -5,7 +5,7 @@ from tslearn.metrics import dtw
 from process import Subject
 
 
-DATA_ROOT = "/home/kavra/Datasets/medical/cvi_eyetracking/asc_data_v1/"
+DATA_ROOT = "/home/kavra/Datasets/medical/cvi_eyetracking/new_res/"
 IMGS_ROOT = "trials/"
 SMAP_ROOT = "output/extra/saliency_maps/"
 
@@ -55,16 +55,16 @@ TRIAL_LIST = [
     "Freeviewingstillimage_93_cutout",
     "Moviestillimage_6",
     "Moviestillimage_8",
-    "visual search form 4_1",
-    "visual search form 8_1",
-    "visual search form 16_1",
-    "visual search form 24_1",
-    "visual search form 32_1",
-    "visual search orientation 4_1",
-    "visual search orientation 8_1",
-    "visual search orientation 16_1",
-    "visual search orientation 24_1",
-    "visual search orientation 32_1",
+    #"visual search form 4_1",
+    #"visual search form 8_1",
+    #"visual search form 16_1",
+    #"visual search form 24_1",
+    #"visual search form 32_1",
+    #"visual search orientation 4_1",
+    #"visual search orientation 8_1",
+    #"visual search orientation 16_1",
+    #"visual search orientation 24_1",
+    #"visual search orientation 32_1",
 ]
 
 TO_COMPARE = [
