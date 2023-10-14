@@ -1,4 +1,27 @@
-import numpy as np
+import numpy as np, math
+from collections import Counter
+from scipy.signal import medfilt
+
+
+def shannon_entropy(time_series):
+    """
+    Calculate the Shannon entropy of a time series.
+
+    Parameters:
+    - time_series (list or numpy array): The input time series data.
+
+    Returns:
+    - entropy (float): The Shannon entropy of the time series.
+    """
+    # Count the occurrences of each unique value in the time series
+    value_counts = Counter(time_series)
+    # Calculate the total number of data points in the time series
+    total_count = len(time_series)
+    # Calculate the probability of each unique value
+    probabilities = [count / total_count for count in value_counts.values()]
+    # Calculate Shannon entropy
+    entropy = -sum(p * math.log(p) for p in probabilities if p > 0)
+    return entropy
 
 
 def fix_bounds(data, new_res=False):
@@ -119,7 +142,7 @@ class Subject:
         out[out < 0] = 0.0
 
         fused_out = []
-        for (xl, yl, xr, yr) in out:
+        for xl, yl, xr, yr in out:
             if ([xl, yl] == [0, 0]) or which == "R":
                 fused_out.append([xr, yr])
             elif ([xr, yr] == [0, 0]) or which == "L":
@@ -145,6 +168,11 @@ class Subject:
         self.trial = self.__trial_list(trial_name, numeric=True)
         data_fusion, fraction = self.__fuse_eyes(self.trial)
         data_fusion = fix_bounds(data_fusion, self.new_res)
+
+        if len(data_fusion.shape) == 2:
+            # smooth the data
+            data_fusion[:, 0] = medfilt(data_fusion[:, 0], kernel_size=7)
+            data_fusion[:, 1] = medfilt(data_fusion[:, 1], kernel_size=7)
 
         if vel:
             velocity = [[0.0, 0.0]]
@@ -339,3 +367,17 @@ class Subject:
         data = self.extract_data(trial_name)
         data = fix_bounds([d["data"] for d in data], self.new_res)
         return [smap[d[1], d[0]] for d in data]
+
+    def eye_mov_entropy(self, trial_name, perplexity=False):
+        data, _ = self.extract_data(trial_name, vel=False)
+        if len(data.shape) < 2:
+            return 0
+        # calculate the difference
+        diff = np.diff(data.T)
+        # calculate the geometric sum
+        sum_diff = np.sqrt(sum(diff**2))
+        # calculate the velocity
+        velocity = np.diff(sum_diff) * (500 / 2)
+        # calculate the entropy
+        entropy = shannon_entropy(velocity)
+        return entropy**2 if perplexity else entropy

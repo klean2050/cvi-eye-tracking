@@ -90,12 +90,19 @@ class FixationAnalyzer:
     def number_of_fixations(self):
         return len(self.fixations)
 
-    def duration_of_fixations(self):
+    def average_velocity(self):
+        velocities = []
+        for fixation in self.fixations:
+            if len(fixation["data"]) > 1:
+                x, y = np.array(fixation["data"], dtype=np.float32).T
+                x, y = x[:-1], y[:-1]
+                dx, dy = np.diff(x), np.diff(y)
+                velocities.append(np.mean(np.sqrt(dx**2 + dy**2)))
+        return np.mean(velocities) if velocities else 0
+
+    def average_duration(self):
         durs = [f["duration"] for f in self.fixations]
-        if durs:
-            return np.mean(durs), np.std(durs)
-        else:
-            return 0, 0
+        return np.mean(durs) if durs else 0
 
     def latency_first_fixation(self):
         if len(self.fixations):
@@ -108,8 +115,7 @@ class FixationAnalyzer:
         if len(self.fixations):
             this_fixation = self.fixations[0]
             saliency = [smap[int(x), int(y)] for x, y in this_fixation["data"]]
-
-            return np.mean(saliency)
+            return np.mean(saliency) if saliency else 0
         else:
             return 0
 
@@ -126,7 +132,7 @@ class FixationAnalyzer:
             self.fixations.sort(key=lambda x: x["duration"])
             this_fixation = self.fixations[-1]
             saliency = [smap[int(x), int(y)] for x, y in this_fixation["data"]]
-            return np.mean(saliency)
+            return np.mean(saliency) if saliency else 0
         else:
             return 0
 
@@ -153,7 +159,7 @@ class FixationAnalyzer:
             return saliencies[-1]
         else:
             return 0
-        
+
     def latency_overtime(self):
         latencies = [f["latency"] for f in self.fixations]
         t = np.arange(len(latencies))

@@ -5,7 +5,7 @@ from tslearn.metrics import dtw
 from process import Subject
 
 
-DATA_ROOT = "/home/kavra/Datasets/medical/cvi_eyetracking/new_res/"
+DATA_ROOT = "/home/kavra/Datasets/medical/cvi_eyetracking/asc_data_v1/"
 IMGS_ROOT = "trials/"
 SMAP_ROOT = "output/extra/saliency_maps/"
 
@@ -55,16 +55,16 @@ TRIAL_LIST = [
     "Freeviewingstillimage_93_cutout",
     "Moviestillimage_6",
     "Moviestillimage_8",
-    #"visual search form 4_1",
-    #"visual search form 8_1",
-    #"visual search form 16_1",
-    #"visual search form 24_1",
-    #"visual search form 32_1",
-    #"visual search orientation 4_1",
-    #"visual search orientation 8_1",
-    #"visual search orientation 16_1",
-    #"visual search orientation 24_1",
-    #"visual search orientation 32_1",
+    # "visual search form 4_1",
+    # "visual search form 8_1",
+    # "visual search form 16_1",
+    # "visual search form 24_1",
+    # "visual search form 32_1",
+    # "visual search orientation 4_1",
+    # "visual search orientation 8_1",
+    # "visual search orientation 16_1",
+    # "visual search orientation 24_1",
+    # "visual search orientation 32_1",
 ]
 
 TO_COMPARE = [
@@ -72,6 +72,133 @@ TO_COMPARE = [
     ["Freeviewingstillimage_28.jpg", "Freeviewingstillimage_28_cutout.tif"],
     ["Freeviewingstillimage_36.jpg", "Freeviewingstillimage_36_cutout.tif"],
     ["Freeviewingstillimage_93.jpg", "Freeviewingstillimage_93_cutout.tif"],
+]
+
+TRIAL_TEXTURE = [
+    "Freeviewingstillimage_1",
+    "Freeviewingstillimage_4",
+    "Freeviewingstillimage_5",
+    "Freeviewingstillimage_8",
+    "Freeviewingstillimage_10",
+    "Freeviewingstillimage_22",
+    "Freeviewingstillimage_23",
+    "Freeviewingstillimage_28",
+    "Freeviewingstillimage_39",
+    "Freeviewingstillimage_40",
+    "Freeviewingstillimage_93",
+]
+
+TRIAL_COMPLEXITY = [
+    "Freeviewingstillimage_8",
+    "Freeviewingstillimage_10",
+    "Freeviewingstillimage_15",
+    "Freeviewingstillimage_16",
+    "Freeviewingstillimage_24",
+    "Freeviewingstillimage_27",
+    "Freeviewingstillimage_28",
+    "Freeviewingstillimage_46",
+]
+
+TRIAL_ORIENTATION = [
+    "Freeviewingstillimage_8",
+    "Freeviewingstillimage_10",
+    "Freeviewingstillimage_13",
+    "Freeviewingstillimage_24",
+    "Freeviewingstillimage_28",
+    "Freeviewingstillimage_36",
+    "Freeviewingstillimage_39",
+    "Freeviewingstillimage_40",
+    "Freeviewingstillimage_41",
+]
+
+TRIAL_BRIGHTNESS = [
+    "Freeviewingstillimage_16",
+    "Freeviewingstillimage_19",
+]
+
+TRIAL_CONTRAST = [
+    "Freeviewingstillimage_35",
+    "Freeviewingstillimage_36",
+    "Freeviewingstillimage_36_cutout",
+]
+
+TRIAL_COLOR = [
+    "Freeviewingstillimage_2",
+    "Freeviewingstillimage_5",
+    "Freeviewingstillimage_8",
+    "Freeviewingstillimage_9",
+    "Freeviewingstillimage_10",
+    "Freeviewingstillimage_10_cutout",
+    "Freeviewingstillimage_11",
+    "Freeviewingstillimage_13",
+    "Freeviewingstillimage_17",
+    "Freeviewingstillimage_22",
+    "Freeviewingstillimage_23",
+    "Freeviewingstillimage_24",
+    "Freeviewingstillimage_26",
+    "Freeviewingstillimage_27",
+    "Freeviewingstillimage_33",
+    "Freeviewingstillimage_39",
+    "Freeviewingstillimage_41",
+    "Freeviewingstillimage_47",
+    "Freeviewingstillimage_92",
+]
+
+TRIAL_DEPTH = [
+    "Freeviewingstillimage_1",
+    "Freeviewingstillimage_11",
+    "Freeviewingstillimage_15",
+    "Freeviewingstillimage_18",
+    "Freeviewingstillimage_20",
+    "Freeviewingstillimage_25",
+    "Freeviewingstillimage_29",
+    "Freeviewingstillimage_31",
+    "Freeviewingstillimage_33",
+    "Freeviewingstillimage_36",
+    "Freeviewingstillimage_36_cutout",
+    "Freeviewingstillimage_39",
+]
+
+TRIAL_FACE = [
+    "Freeviewingstillimage_2",
+    "Freeviewingstillimage_4",
+    "Freeviewingstillimage_5",
+    "Freeviewingstillimage_7",
+    "Freeviewingstillimage_8",
+    "Freeviewingstillimage_9",
+    "Freeviewingstillimage_11",
+    "Freeviewingstillimage_13",
+    "Freeviewingstillimage_15",
+    "Freeviewingstillimage_17",
+    "Freeviewingstillimage_19",
+    "Freeviewingstillimage_20",
+    "Freeviewingstillimage_23",
+    "Freeviewingstillimage_25",
+    "Freeviewingstillimage_26",
+    "Freeviewingstillimage_28",
+    "Freeviewingstillimage_28_cutout",
+    "Freeviewingstillimage_31",
+    "Freeviewingstillimage_33",
+    "Freeviewingstillimage_39",
+    "Freeviewingstillimage_45",
+]
+
+TRIAL_MOVEMENT = [
+    "Freeviewingstillimage_1",
+    "Freeviewingstillimage_7",
+    "Freeviewingstillimage_18",
+    "Freeviewingstillimage_31",
+    "Freeviewingstillimage_35",
+    "Freeviewingstillimage_45",
+]
+
+TRIAL_FACE_TEXTURE = [
+    "Freeviewingstillimage_4",
+    "Freeviewingstillimage_5",
+    "Freeviewingstillimage_8",
+    "Freeviewingstillimage_23",
+    "Freeviewingstillimage_28",
+    "Freeviewingstillimage_39",
 ]
 
 
