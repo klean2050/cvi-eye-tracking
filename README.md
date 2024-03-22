@@ -1,6 +1,6 @@
 # Visual Saliency in Pediatric CVI through Eye Tracking
 
-Code implementation for [Evaluating Atypical Gaze Patterns through Vision Models: The Case of Cortical Visual Impairment](https://arxiv.org/abs/2402.09655)
+Code for [Evaluating Atypical Gaze Patterns through Vision Models: The Case of Cortical Visual Impairment](https://arxiv.org/abs/2402.09655).
 
 ## Installation
 
