@@ -1,5 +1,6 @@
 output/
 trials/
-smaps/
+smaps*/
 __pycache__/
+*markov*
 .*/

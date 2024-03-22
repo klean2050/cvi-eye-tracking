@@ -1,6 +1,5 @@
 import numpy as np, math
 from collections import Counter
-from scipy.signal import medfilt
 
 
 def shannon_entropy(time_series):
@@ -108,6 +107,7 @@ class Subject:
         Function: iterates over the data to record [SSAC-ESAC] intervals
         Returns: saccade time-series where each element is a 4-item list
         """
+        is_blink, blinks = False, []
         this_eye = "L" if left else "R"
         saccade_active, saccades = False, []
         for line in self.trial:
@@ -115,15 +115,20 @@ class Subject:
                 if f"ESACC {this_eye}" in line:
                     saccades.append(current_saccade)
                     saccade_active = False
+                    if is_blink:
+                        blinks.append(current_saccade)
+                        is_blink = False
                 else:
                     if line[0].isdigit():
                         current_saccade.append(line)
+                    elif "SBLINK" in line:
+                        is_blink = True
             elif f"SSACC {this_eye}" in line:
                 saccade_active = True
                 current_saccade = []
             else:
                 continue
-        return saccades
+        return saccades, blinks
 
     def __fuse_eyes(self, array, which="both"):
         """
@@ -143,8 +148,8 @@ class Subject:
 
         fused_out = []
         for xl, yl, xr, yr in out:
-            if ([xl, yl] == [0, 0]) or which == "R":
-                fused_out.append([xr, yr])
+            if ([xr, yr] == [0, 0]) or which == "R":
+                fused_out.append([xl, yl])
             elif ([xr, yr] == [0, 0]) or which == "L":
                 fused_out.append([xl, yl])
             else:
@@ -169,11 +174,6 @@ class Subject:
         data_fusion, fraction = self.__fuse_eyes(self.trial)
         data_fusion = fix_bounds(data_fusion, self.new_res)
 
-        if len(data_fusion.shape) == 2:
-            # smooth the data
-            data_fusion[:, 0] = medfilt(data_fusion[:, 0], kernel_size=7)
-            data_fusion[:, 1] = medfilt(data_fusion[:, 1], kernel_size=7)
-
         if vel:
             velocity = [[0.0, 0.0]]
             velocity += [
@@ -195,8 +195,8 @@ class Subject:
             return []
 
         # get both eye saccades
-        saccades_l = self.__saccade_list(left=True)
-        saccades_r = self.__saccade_list(left=False)
+        saccades_l, _ = self.__saccade_list(left=True)
+        saccades_r, _ = self.__saccade_list(left=False)
         self.saccades = [saccades_l, saccades_r]
 
         # compute the intersection between saccades
@@ -362,11 +362,6 @@ class Subject:
 
         fixations_all.sort(key=lambda x: x["latency"])
         return fixations_all
-
-    def extract_trace(self, trial_name, smap):
-        data = self.extract_data(trial_name)
-        data = fix_bounds([d["data"] for d in data], self.new_res)
-        return [smap[d[1], d[0]] for d in data]
 
     def eye_mov_entropy(self, trial_name, perplexity=False):
         data, _ = self.extract_data(trial_name, vel=False)

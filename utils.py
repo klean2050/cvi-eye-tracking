@@ -1,13 +1,11 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from process import Subject
 from tslearn.metrics import dtw
 
-from process import Subject
-
-
-DATA_ROOT = "/home/kavra/Datasets/medical/cvi_eyetracking/asc_data_v1/"
+DATA_ROOT1 = "/PLACEHOLDER/"
+DATA_ROOT2 = "/PLACEHOLDER/"
 IMGS_ROOT = "trials/"
-SMAP_ROOT = "output/extra/saliency_maps/"
 
 TRIAL_LIST = [
     "Freeviewingstillimage_1",
@@ -55,23 +53,26 @@ TRIAL_LIST = [
     "Freeviewingstillimage_93_cutout",
     "Moviestillimage_6",
     "Moviestillimage_8",
-    # "visual search form 4_1",
-    # "visual search form 8_1",
-    # "visual search form 16_1",
-    # "visual search form 24_1",
-    # "visual search form 32_1",
-    # "visual search orientation 4_1",
-    # "visual search orientation 8_1",
-    # "visual search orientation 16_1",
-    # "visual search orientation 24_1",
-    # "visual search orientation 32_1",
 ]
 
-TO_COMPARE = [
-    ["Freeviewingstillimage_10.jpg", "Freeviewingstillimage_10_cutout.tif"],
-    ["Freeviewingstillimage_28.jpg", "Freeviewingstillimage_28_cutout.tif"],
-    ["Freeviewingstillimage_36.jpg", "Freeviewingstillimage_36_cutout.tif"],
-    ["Freeviewingstillimage_93.jpg", "Freeviewingstillimage_93_cutout.tif"],
+VISUAL_SEARCH = [
+    "visual search form 4_1",
+    "visual search form 8_1",
+    "visual search form 16_1",
+    "visual search form 24_1",
+    "visual search form 32_1",
+    "visual search orientation 4_1",
+    "visual search orientation 8_1",
+    "visual search orientation 16_1",
+    "visual search orientation 24_1",
+    "visual search orientation 32_1",
+]
+
+CUTOUTS = [
+    ["Freeviewingstillimage_10", "Freeviewingstillimage_10_cutout"],
+    ["Freeviewingstillimage_28", "Freeviewingstillimage_28_cutout"],
+    ["Freeviewingstillimage_36", "Freeviewingstillimage_36_cutout"],
+    ["Freeviewingstillimage_93", "Freeviewingstillimage_93_cutout"],
 ]
 
 TRIAL_TEXTURE = [
@@ -79,13 +80,11 @@ TRIAL_TEXTURE = [
     "Freeviewingstillimage_4",
     "Freeviewingstillimage_5",
     "Freeviewingstillimage_8",
-    "Freeviewingstillimage_10",
     "Freeviewingstillimage_22",
     "Freeviewingstillimage_23",
     "Freeviewingstillimage_28",
     "Freeviewingstillimage_39",
     "Freeviewingstillimage_40",
-    "Freeviewingstillimage_93",
 ]
 
 TRIAL_COMPLEXITY = [
@@ -105,21 +104,44 @@ TRIAL_ORIENTATION = [
     "Freeviewingstillimage_13",
     "Freeviewingstillimage_24",
     "Freeviewingstillimage_28",
-    "Freeviewingstillimage_36",
     "Freeviewingstillimage_39",
     "Freeviewingstillimage_40",
     "Freeviewingstillimage_41",
 ]
 
 TRIAL_BRIGHTNESS = [
+    "Freeviewingstillimage_1",
+    "Freeviewingstillimage_10",
+    "Freeviewingstillimage_15",
     "Freeviewingstillimage_16",
     "Freeviewingstillimage_19",
+    "Freeviewingstillimage_21",
+    "Freeviewingstillimage_23",
+    "Freeviewingstillimage_25",
+    "Freeviewingstillimage_27",
+    "Freeviewingstillimage_29",
+    "Freeviewingstillimage_31",
+    "Freeviewingstillimage_36",
+    "Freeviewingstillimage_39",
+    "Freeviewingstillimage_40",
+    "Freeviewingstillimage_45",
+    "Freeviewingstillimage_46",
+    "Freeviewingstillimage_47",
 ]
 
-TRIAL_CONTRAST = [
-    "Freeviewingstillimage_35",
-    "Freeviewingstillimage_36",
-    "Freeviewingstillimage_36_cutout",
+TRIAL_BRIGHT_COLORS = [
+    "Freeviewingstillimage_2",
+    "Freeviewingstillimage_5",
+    "Freeviewingstillimage_11",
+    "Freeviewingstillimage_13",
+    "Freeviewingstillimage_21",
+    "Freeviewingstillimage_23",
+    "Freeviewingstillimage_24",
+    "Freeviewingstillimage_26",
+    "Freeviewingstillimage_27",
+    "Freeviewingstillimage_33",
+    "Freeviewingstillimage_39",
+    "Freeviewingstillimage_47",
 ]
 
 TRIAL_COLOR = [
@@ -128,7 +150,6 @@ TRIAL_COLOR = [
     "Freeviewingstillimage_8",
     "Freeviewingstillimage_9",
     "Freeviewingstillimage_10",
-    "Freeviewingstillimage_10_cutout",
     "Freeviewingstillimage_11",
     "Freeviewingstillimage_13",
     "Freeviewingstillimage_17",
@@ -155,7 +176,6 @@ TRIAL_DEPTH = [
     "Freeviewingstillimage_31",
     "Freeviewingstillimage_33",
     "Freeviewingstillimage_36",
-    "Freeviewingstillimage_36_cutout",
     "Freeviewingstillimage_39",
 ]
 
@@ -176,29 +196,69 @@ TRIAL_FACE = [
     "Freeviewingstillimage_25",
     "Freeviewingstillimage_26",
     "Freeviewingstillimage_28",
-    "Freeviewingstillimage_28_cutout",
     "Freeviewingstillimage_31",
     "Freeviewingstillimage_33",
     "Freeviewingstillimage_39",
     "Freeviewingstillimage_45",
 ]
 
-TRIAL_MOVEMENT = [
-    "Freeviewingstillimage_1",
+TRIAL_FACE_INTERACTION = [
     "Freeviewingstillimage_7",
-    "Freeviewingstillimage_18",
+    "Freeviewingstillimage_9",
+    "Freeviewingstillimage_11",
+    "Freeviewingstillimage_12",
+    "Freeviewingstillimage_13",
+    "Freeviewingstillimage_15",
+    "Freeviewingstillimage_16",
+    "Freeviewingstillimage_21",
+    "Freeviewingstillimage_25",
+    "Freeviewingstillimage_26",
+    "Freeviewingstillimage_28",
+    "Freeviewingstillimage_29",
     "Freeviewingstillimage_31",
-    "Freeviewingstillimage_35",
+    "Freeviewingstillimage_33",
+    "Freeviewingstillimage_45",
+    "Freeviewingstillimage_47",
+    "Freeviewingstillimage_93",
+]
+
+TRIAL_FACE_HANDS = [
+    "Freeviewingstillimage_2",
+    "Freeviewingstillimage_5",
+    "Freeviewingstillimage_7",
+    "Freeviewingstillimage_9",
+    "Freeviewingstillimage_16",
+    "Freeviewingstillimage_20",
+    "Freeviewingstillimage_21",
+    "Freeviewingstillimage_25",
+    "Freeviewingstillimage_26",
+    "Freeviewingstillimage_31",
+    "Freeviewingstillimage_33",
+    "Freeviewingstillimage_39",
     "Freeviewingstillimage_45",
 ]
 
-TRIAL_FACE_TEXTURE = [
-    "Freeviewingstillimage_4",
-    "Freeviewingstillimage_5",
-    "Freeviewingstillimage_8",
-    "Freeviewingstillimage_23",
-    "Freeviewingstillimage_28",
+TRIAL_EYES_MOUTH = [
+    "Freeviewingstillimage_9",
+    "Freeviewingstillimage_17",
+    "Freeviewingstillimage_20",
+    "Freeviewingstillimage_26",
+    "Freeviewingstillimage_33",
     "Freeviewingstillimage_39",
+]
+
+TRIAL_MOVEMENT = [
+    "Freeviewingstillimage_7",
+    "Freeviewingstillimage_10",
+    "Freeviewingstillimage_16",
+    "Freeviewingstillimage_31",
+    "Freeviewingstillimage_35",
+    "Freeviewingstillimage_36",
+    "Freeviewingstillimage_45",
+    "Freeviewingstillimage_47",
+    "Freeviewingstillimage_88",
+    "Moviestillimage_6",
+    "Moviestillimage_8",
 ]
 
 
@@ -267,3 +327,19 @@ def compare_trial_traces(names, trials, outpath):
 
     x_y = [[k, v] for k, v in comparison.items()]
     x_y.sort(key=lambda x: x[0])
+
+
+def fix_bounds(data, new_res=False):
+    new_data = []
+    for x, y in data:
+        if new_res:
+            x = np.nan if x >= 1279 + 320 else np.nan if x <= 319 else x
+            y = np.nan if y >= 719 + 240 else np.nan if y <= 239 else y
+        else:
+            x = np.nan if x >= 1279 else np.nan if x <= 0 else x
+            y = np.nan if y >= 719 else np.nan if y <= 0 else y
+        try:
+            new_data.append([int(x), int(y)])
+        except:
+            new_data.append([np.nan, np.nan])
+    return np.array(new_data)

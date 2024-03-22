@@ -38,8 +38,9 @@ class SaliencyMap:
         elif self.smap_type == "deepgaze":
             smap = smap_deepgaze(trial)
         elif self.smap_type == "center":
-            smap = smap_center(trial)
+            smap = smap_center(trial) ** 2
         else:
             smap = smap_object(trial, self.smap_type)
+            smap = cv2.blur(smap, (51, 51))
 
         return self.normalize(smap) * 255
