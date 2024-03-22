@@ -1,5 +1,7 @@
 # Visual Saliency in Pediatric CVI through Eye Tracking
 
+Code implementation for [Evaluating Atypical Gaze Patterns through Vision Models: The Case of Cortical Visual Impairment](https://arxiv.org/abs/2402.09655)
+
 ## Installation
 
 We recommend using a conda environment with ``Python >= 3.9`` :
@@ -16,7 +18,7 @@ git clone https://github.com/klean2050/cvi-eye-tracking
 cd cvi-eye-tracking && pip install -r requirements.txt
 ```
 
-You will also need to clone [this repository](https://github.com/matthias-k/DeepGaze). We do not provide `.asc` files or image stimuli. If you have access to the data, modify the respective path parameters at `utils.py`. You can run a sample experiment using the following command:
+You will also need to clone [this repository](https://github.com/matthias-k/DeepGaze). We do not provide `.asc` files or image stimuli. If you have access to the data, modify the respective path parameters at `utils.py`. You can run a sample experiment using the following:
 
 ```bash
 python main.py
