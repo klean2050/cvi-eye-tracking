@@ -11,6 +11,7 @@ these_trials = TRIAL_LIST
 smap_type = "face"
 smap_type_vs = None
 cutouts = False
+save = False
 
 
 def plot_number_of_fixations(saliencies_ctrl, saliencies_cvi, reverse=False):
@@ -128,7 +129,7 @@ if __name__ == "__main__":
     with open(f"saliencies_{smap_type}.json", "w") as f:
         json.dump(saliencies, f, indent=4)
 
-    """# aggregate features per subject (only if more than one trial)
+    # aggregate features per subject (only if more than one trial)
     feats = integrate_subjects(feats)
     feats = {k: np.mean(v) for k, v in feats.items() if len(v) > 1}
     saliencies = integrate_subjects(saliencies)
@@ -137,22 +138,22 @@ if __name__ == "__main__":
     # save features for plotting
     feats_ctrl = [v for k, v in feats.items() if k.startswith("2")]
     feats_cvi = [v for k, v in feats.items() if k.startswith("1")]
-    np.save(f"feats_ctrl_{smap_type}.npy", np.array(feats_ctrl))
-    np.save(f"feats_cvi_{smap_type}.npy", np.array(feats_cvi))
-    # save the keys
-    np.save(f"keys_ctrl.npy", np.array([k for k in feats.keys() if k.startswith("2")]))
-    np.save(f"keys_cvi.npy", np.array([k for k in feats.keys() if k.startswith("1")]))
 
-    # same for saliencies
-    saliencies_ctrl = [v for k, v in saliencies.items() if k.startswith("2")]
-    saliencies_ctrl = [v for sublist in saliencies_ctrl for v in sublist]
-    saliencies_cvi = [v for k, v in saliencies.items() if k.startswith("1")]
-    saliencies_cvi = [v for sublist in saliencies_cvi for v in sublist]
-    plot_number_of_fixations(saliencies_ctrl, saliencies_cvi)
+    if save:
+        np.save(f"feats_ctrl_{smap_type}.npy", np.array(feats_ctrl))
+        np.save(f"feats_cvi_{smap_type}.npy", np.array(feats_cvi))
+        np.save(f"k_ctrl.npy", np.array([k for k in feats.keys() if k.startswith("2")]))
+        np.save(f"k_cvi.npy", np.array([k for k in feats.keys() if k.startswith("1")]))
+        # same for saliencies
+        saliencies_ctrl = [v for k, v in saliencies.items() if k.startswith("2")]
+        saliencies_ctrl = [v for sublist in saliencies_ctrl for v in sublist]
+        saliencies_cvi = [v for k, v in saliencies.items() if k.startswith("1")]
+        saliencies_cvi = [v for sublist in saliencies_cvi for v in sublist]
+        plot_number_of_fixations(saliencies_ctrl, saliencies_cvi)
 
     # print summary of aggregate statistics
     print("Mean ~ Control:", np.mean(feats_ctrl), "CVI:", np.mean(feats_cvi))
     print("Std ~ Control:", np.std(feats_ctrl), "CVI:", np.std(feats_cvi))
     print("Cohen's d =", cohen_d(feats_ctrl, feats_cvi))
     print(stats.mannwhitneyu(feats_ctrl, feats_cvi))
-    print(stats.permutation_test((feats_ctrl, feats_cvi), statistic_mw))"""
+    print(stats.permutation_test((feats_ctrl, feats_cvi), statistic_mw))
