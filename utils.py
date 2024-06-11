@@ -3,8 +3,9 @@ import matplotlib.pyplot as plt
 from process import Subject
 from tslearn.metrics import dtw
 
-DATA_ROOT1 = "/PLACEHOLDER/"
-DATA_ROOT2 = "/PLACEHOLDER/"
+DATA_ROOT1 = "/home/kavra/Datasets/medical/cvi_eyetracking/asc_data_v1/"
+DATA_ROOT2 = "/home/kavra/Datasets/medical/cvi_eyetracking/15q_new_res/"
+DATA_ROOT3 = "/home/kavra/Datasets/medical/cvi_eyetracking/new_res/"
 IMGS_ROOT = "trials/"
 
 TRIAL_LIST = [

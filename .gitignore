@@ -4,3 +4,5 @@ smaps*/
 __pycache__/
 *markov*
 .*/
+*.npy
+*.zip

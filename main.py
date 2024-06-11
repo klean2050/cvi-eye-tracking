@@ -1,4 +1,4 @@
-import os, seaborn as sns
+import os, seaborn as sns, json
 from scipy import stats
 from tqdm import tqdm
 
@@ -13,10 +13,11 @@ smap_type_vs = None
 cutouts = False
 
 
-def plot_number_of_fixations(saliencies_ctrl, saliencies_cvi):
-    # reverse
-    saliencies_ctrl = 255 - np.array(saliencies_ctrl)
-    saliencies_cvi = 255 - np.array(saliencies_cvi)
+def plot_number_of_fixations(saliencies_ctrl, saliencies_cvi, reverse=False):
+    if reverse:
+        saliencies_ctrl = 255 - np.array(saliencies_ctrl)
+        saliencies_cvi = 255 - np.array(saliencies_cvi)
+
     plt.figure(figsize=(9, 3), dpi=200)
     sns.kdeplot(
         saliencies_ctrl,
@@ -89,19 +90,22 @@ def extract_features(ids, trial):
         feat = analyzer.average_saliency(smap)
         if feat is not None:
             feats[subject].append(feat)
-        saliencies[subject].extend(analyzer.get_saliencies(smap))
+        saliencies[subject][trial.trial_name] = analyzer.get_saliencies(smap)
 
 
 if __name__ == "__main__":
     # get list of subject data
     ids1 = [i for i in os.listdir(DATA_ROOT1) if i.endswith(".asc")]
-    ids = ids1 + [i for i in os.listdir(DATA_ROOT2) if i.endswith(".asc")]
+    ids2 = ids1 + [i for i in os.listdir(DATA_ROOT2) if i.endswith(".asc")]
+    ids = ids2 + [i for i in os.listdir(DATA_ROOT3) if i.endswith(".asc")]
 
     # initialize features and paths
     feats = {name.split(".")[0]: [] for name in ids}
-    saliencies = {name.split(".")[0]: [] for name in ids}
+    saliencies = {name.split(".")[0]: {} for name in ids}
     which_root = {
-        name.split(".")[0]: DATA_ROOT1 if i < len(ids1) else DATA_ROOT2
+        name.split(".")[0]: (
+            DATA_ROOT1 if i < len(ids1) else DATA_ROOT2 if i < len(ids2) else DATA_ROOT3
+        )
         for i, name in enumerate(ids)
     }
 
@@ -113,7 +117,6 @@ if __name__ == "__main__":
 
     p_values = []
     for trial in tqdm(these_trials):
-        print(trial)
         if "cutout" in trial and not cutouts:
             continue
         # extract features for this trial
@@ -121,7 +124,11 @@ if __name__ == "__main__":
         extract_features(ctrl_ids, this_trial)
         extract_features(cvi_ids, this_trial)
 
-    # aggregate features per subject (only if more than one trial)
+    # save saliences in json
+    with open(f"saliencies_{smap_type}.json", "w") as f:
+        json.dump(saliencies, f, indent=4)
+
+    """# aggregate features per subject (only if more than one trial)
     feats = integrate_subjects(feats)
     feats = {k: np.mean(v) for k, v in feats.items() if len(v) > 1}
     saliencies = integrate_subjects(saliencies)
@@ -130,8 +137,11 @@ if __name__ == "__main__":
     # save features for plotting
     feats_ctrl = [v for k, v in feats.items() if k.startswith("2")]
     feats_cvi = [v for k, v in feats.items() if k.startswith("1")]
-    np.save("feats_ctrl.npy", np.array(feats_ctrl))
-    np.save("feats_cvi.npy", np.array(feats_cvi))
+    np.save(f"feats_ctrl_{smap_type}.npy", np.array(feats_ctrl))
+    np.save(f"feats_cvi_{smap_type}.npy", np.array(feats_cvi))
+    # save the keys
+    np.save(f"keys_ctrl.npy", np.array([k for k in feats.keys() if k.startswith("2")]))
+    np.save(f"keys_cvi.npy", np.array([k for k in feats.keys() if k.startswith("1")]))
 
     # same for saliencies
     saliencies_ctrl = [v for k, v in saliencies.items() if k.startswith("2")]
@@ -145,4 +155,4 @@ if __name__ == "__main__":
     print("Std ~ Control:", np.std(feats_ctrl), "CVI:", np.std(feats_cvi))
     print("Cohen's d =", cohen_d(feats_ctrl, feats_cvi))
     print(stats.mannwhitneyu(feats_ctrl, feats_cvi))
-    print(stats.permutation_test((feats_ctrl, feats_cvi), statistic_mw))
+    print(stats.permutation_test((feats_ctrl, feats_cvi), statistic_mw))"""

@@ -73,7 +73,8 @@ class FixationAnalyzer:
         for fixation in self.fixations:
             saliency = [smap[int(x), int(y)] for x, y in fixation["data"]]
             fixation[f"saliency"] = np.nanmean(saliency)
-            saliencies.append(np.nanmean(saliency))
+            to_add = float(np.nanmean(saliency))
+            saliencies.append(np.round(to_add, 1))
         return saliencies
 
     def fixation_map(self, trial):

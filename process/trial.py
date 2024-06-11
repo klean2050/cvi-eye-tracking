@@ -22,7 +22,7 @@ class ImageTrial:
         filename = f"{image_name}_{smap_type}.jpg"
         path = os.path.join(self.smap_dir, image_name, filename)
 
-        if os.path.exists(path) and False:
+        if os.path.exists(path):
             smap = plt.imread(path)
         else:
             os.makedirs(os.path.join(self.smap_dir, image_name), exist_ok=True)
